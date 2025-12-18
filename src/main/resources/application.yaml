@@ -15,7 +15,7 @@ langchain4j:
   openai:
     chat-model:
       base-url: https://api.deepseek.com
-      api-key: sk-638f7b118bde4766b686310eeb1d2d18
+      api-key: 
       model-name: deepseek-chat
       temperature: 0.7
       max-tokens: 1000
@@ -25,7 +25,7 @@ langchain4j:
       strict-tools: true
     streaming-chat-model:
       base-url: https://api.deepseek.com
-      api-key: sk-638f7b118bde4766b686310eeb1d2d18
+      api-key: 
       model-name: deepseek-chat
       temperature: 0.7
       max-tokens: 1000
