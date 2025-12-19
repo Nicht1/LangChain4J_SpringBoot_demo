@@ -33,10 +33,10 @@ public class EasyRAGAssistantConfig {
     public EasyRAGAssistantFactory easyRAGAssistantFactory(ChatModel chatModel,
                                                              DatabaseChatMemoryStore memoryStore,
                                                              List<LlmTool> tools,
-                                                           RetrievalAugmentor retrievalAugmentor ) {
+                                                           ContentRetriever contentRetriever ) {
         System.out.println("🔧 已注入工具数量: " + tools.size());
         tools.forEach(t -> System.out.println(" - " + t.getClass().getName()));
-        return new EasyRAGAssistantConfig.EasyRAGAssistantFactory(chatModel, memoryStore, tools, retrievalAugmentor);
+        return new EasyRAGAssistantConfig.EasyRAGAssistantFactory(chatModel, memoryStore, tools, contentRetriever);
     }
 
     /**
@@ -49,15 +49,15 @@ public class EasyRAGAssistantConfig {
 
         private final List<LlmTool> tools;
 
-        private final RetrievalAugmentor retrievalAugmentor;
+        private final ContentRetriever contentRetriever;
 
         public EasyRAGAssistantFactory(ChatModel chatModel,
                                        DatabaseChatMemoryStore memoryStore,
-                                       List<LlmTool> tools,  RetrievalAugmentor retrievalAugmentor) {
+                                       List<LlmTool> tools,  ContentRetriever contentRetriever) {
             this.chatModel = chatModel;
             this.memoryStore = memoryStore;
             this.tools = tools;
-            this.retrievalAugmentor = retrievalAugmentor;
+            this.contentRetriever = contentRetriever;
         }
 
         /**
@@ -73,7 +73,7 @@ public class EasyRAGAssistantConfig {
             return AiServices.builder(EasyRAGAssistant.class)
                     .chatModel(chatModel)
                     .chatMemory(chatMemory)
-                    .retrievalAugmentor(retrievalAugmentor)
+                    .contentRetriever(contentRetriever)
                     .tools(new ArrayList<>(tools))
                     .build();
         }

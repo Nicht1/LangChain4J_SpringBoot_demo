@@ -3,6 +3,7 @@ package com.llm.config;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
 import dev.langchain4j.data.segment.TextSegment;
+
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
@@ -16,6 +17,7 @@ public class EasyRAGEmbeddingStoreConfig {
 
     @Bean
     public EmbeddingStore<TextSegment> embeddingStore() {
+
         InMemoryEmbeddingStore<TextSegment> store = new InMemoryEmbeddingStore<>();
         // 必须使用真实物理地址，无法使用放在 resource 中被 jar 打包后内容文件
         List<Document> documents = FileSystemDocumentLoader.loadDocuments(
