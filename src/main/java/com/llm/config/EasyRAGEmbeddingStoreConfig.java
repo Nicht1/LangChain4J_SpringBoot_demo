@@ -30,6 +30,17 @@ public class EasyRAGEmbeddingStoreConfig {
 //            doc.metadata().put("source", "filesystem");
 //        }
 
+
+        // 如果需要 自定义向量模型的话：EmbeddingModel embeddingModel
+//        EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
+//                .embeddingModel(embeddingModel)
+//                .embeddingStore(store)
+//                .build();
+//
+//// 正确的调用方式：只传 documents
+//        ingestor.ingest(documents);
+
+
         EmbeddingStoreIngestor.ingest(documents, store);
         return store;
     }
