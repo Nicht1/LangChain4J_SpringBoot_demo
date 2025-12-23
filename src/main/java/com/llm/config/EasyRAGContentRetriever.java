@@ -21,6 +21,7 @@ public class EasyRAGContentRetriever implements ContentRetriever {
     private final EmbeddingStoreContentRetriever originalRetriever;
 
     public EasyRAGContentRetriever(EmbeddingStore<TextSegment> embeddingStore) {
+
         this.originalRetriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
                 .maxResults(3)  // 限制检索结果数量

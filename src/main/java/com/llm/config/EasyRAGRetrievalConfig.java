@@ -12,11 +12,15 @@ public class EasyRAGRetrievalConfig {
     @Bean
     public RetrievalAugmentor retrievalAugmentor(
             ContentRetriever easyRAGcontentRetriever,
-            EasyRAGContentInjector easyRAGContentInjector) {
+            // 使用用户 Query 加强
+//            EasyRAGQueryTransformer queryTransformer ,
+            EasyRAGContentInjector easyRAGContentInjector
+ ) {
 
         return DefaultRetrievalAugmentor.builder()
                 .contentRetriever(easyRAGcontentRetriever)
                 .contentInjector(easyRAGContentInjector)
+//                .queryTransformer(queryTransformer)
                 .build();
     }
 }
