@@ -72,6 +72,12 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
+        <!-- ollama 本地部署 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-ollama-spring-boot-starter</artifactId>
+        </dependency>
+
         <!-- 添加 Web 支持（可选但推荐） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
