@@ -14,6 +14,18 @@
     <name>LLM-Spring</name>
     <description>LLM-Spring</description>
     <url/>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <fork>true</fork>
+                    <executable>D:\java17\bin\javac</executable>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <licenses>
         <license/>
     </licenses>
@@ -28,6 +40,7 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -112,7 +125,16 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-milvus</artifactId>
+        </dependency>
 
+        <!-- BGE-small-zh 中文 embedding 模型（本地运行，512维，无需 API） -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-bge-small-zh</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

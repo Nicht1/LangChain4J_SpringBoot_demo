@@ -34,6 +34,28 @@ langchain4j:
       strict-tools: true
       log-responses: true
 
+  # ============================================================
+  # 模型分工：
+  #   聊天模型 → DeepSeek（chat-model / streaming-chat-model）
+  #   向量模型 → BGE-small-zh（本地 ONNX，512维，见 EasyRAGEmbeddingStoreConfig）
+  # ============================================================
+#   embedding-model:          # DeepSeek 不支持 embedding  -API，改用本地 BGE-small-zh 模型
+#      base-url: https://api.deepseek.com
+#      api-key: sk-638f7b118bde4766b686310eeb1d2d18
+#      model-name: deepseek-chat
+  # Milvus 向量数据库配置
+  milvus:
+    host: 124.220.101.31
+    port: 19530
+    # token: your-token          # 如有认证需求取消注释
+    database-name: my_rag_db
+    collection-name: llm_rag_docs_v2
+    dimension: 512                # 向量维度，BGE-small-zh=512（需删除旧集合重新创建）
+    reload-on-startup: true       # 启动时重新加载文档到 Milvus
+    document-path: D:\work\LLM-Spring\src\main\resources\documentation
+
+
+
 
 # 可通过显式布线模式 来指定要使用模型 ，通过 model-name 来区分
 # 使用示例：
