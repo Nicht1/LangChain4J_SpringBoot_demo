@@ -2,9 +2,9 @@ package com.llm.service;
 
 import com.llm.assistant.Assistant;
 import com.llm.assistant.AssistantChatMemory;
-import com.llm.assistant.config.AssistantChatMemoryProviderConfig.AssistantChatMemoryFactory;
-import com.llm.assistant.config.AssistantConfig.AssistantFactory;
-import com.llm.memory.DatabaseChatMemoryStore;
+import com.llm.config.AssistantChatMemoryConfig.AssistantChatMemoryFactory;
+import com.llm.config.AssistantConfig.AssistantFactory;
+import com.llm.store.DatabaseChatMemoryStore;
 import com.llm.pojo.ChatSession;
 import com.llm.vo.response.MessageResponseVO;
 import org.springframework.beans.factory.annotation.Autowired;

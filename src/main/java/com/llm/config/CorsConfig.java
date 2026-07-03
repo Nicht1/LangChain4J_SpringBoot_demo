@@ -9,13 +9,20 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.Arrays;
 
 /**
- * 流式传输配置
+ * CORS 跨域配置。
+ * <p>
+ * 流式 SSE 端点（/api/stream/**）需要浏览器建立长连接读取事件流，
+ * 必须放开跨域限制，否则前端 fetch/EventSource 会被浏览器拦截。
  */
 @Configuration
-public class StreamingConfig {
+public class CorsConfig {
 
     /**
-     * 配置 CORS 支持流式传输
+     * 注册 CORS 过滤器，仅对 /api/stream/** 路径生效。
+     * <p>
+     * 注意：生产环境应把 allowedOrigins 改为具体域名，不要用 *。
+     * exposedHeaders 中显式暴露 Content-Type 和 Content-Length，
+     * 确保 SSE 流的前端能正确读取响应头。
      */
     @Bean
     public CorsFilter corsWebFilter() {

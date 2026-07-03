@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 // 使用用户 Query 加强输入、可以让用户携带携带相关内容 userId, sessionId 等
-//@Component
+@Component
 public class EasyRAGQueryTransformer implements QueryTransformer {
 
     @Override

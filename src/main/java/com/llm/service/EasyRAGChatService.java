@@ -1,8 +1,8 @@
 package com.llm.service;
 
 import com.llm.assistant.EasyRAGAssistant;
-import com.llm.assistant.config.EasyRAGAssistantConfig.EasyRAGAssistantFactory;
-import com.llm.memory.DatabaseChatMemoryStore;
+import com.llm.config.EasyRAGAssistantConfig.EasyRAGAssistantFactory;
+import com.llm.store.DatabaseChatMemoryStore;
 import com.llm.pojo.ChatSession;
 import com.llm.vo.response.MessageResponseVO;
 import org.springframework.beans.factory.annotation.Autowired;
