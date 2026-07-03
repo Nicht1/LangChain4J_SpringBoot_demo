@@ -8,44 +8,68 @@ import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.content.injector.ContentInjector;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * RAG 内容注入器：将检索到的文档内容格式化为 SystemMessage，
+ * 注入到对话上下文中供 LLM 参考。
+ * 注入时机：在 ChatModel 被调用之前，由 LangChain4j RAG 框架自动触发。
+ * 注入形式：SystemMessage（而非 UserMessage），优先级更高。
+ *
+ * 模板结构：
+ *
+ * 以下是从知识库中检索到的相关文档内容...
+ * [文档1]
+ * ---
+ * [文档2]
+ * ---
+ * 请基于上述信息回答用户问题...
+ */
 @Component
 public class EasyRAGContentInjector implements ContentInjector {
 
+    /** 注入模板：{{contents}} 会被替换为检索到的文档文本 */
     private static final PromptTemplate PROMPT_TEMPLATE = PromptTemplate.from("""
             以下是从知识库中检索到的相关文档内容，请基于这些信息来回答用户的问题:
-            
+
             {{contents}}
-            
+
             请注意:
             1. 优先使用上述文档中的信息来回答
             2. 如果文档中没有相关信息，可以使用你的通用知识
             3. 如果不确定答案，请明确告知用户
             """);
 
+    /**
+     * 执行注入。
+     *
+     * 如果检索结果为空，直接返回原消息（走正常对话流程，不做 RAG）。
+     * 如果有检索结果，用模板包装后返回 SystemMessage。
+     *
+     * @param contents    检索到的文档内容（可能为空）
+     * @param chatMessage 原始消息（UserMessage）
+     * @return 包含检索内容的 SystemMessage，或原消息
+     */
     @Override
     public ChatMessage inject(List<Content> contents, ChatMessage chatMessage) {
-        // 如果没有检索到内容，直接返回原消息
         if (contents == null || contents.isEmpty()) {
-            return chatMessage;
+            return chatMessage;  // 无检索结果，不做 RAG 增强
         }
 
-        // 格式化检索到的内容
+        // 拼接多个文档片段，用 --- 分隔
         String formattedContents = contents.stream()
                 .map(content -> content.textSegment().text())
                 .collect(Collectors.joining("\n\n---\n\n"));
 
-        // 创建 Prompt
+        // 模板变量替换
         Map<String, Object> variables = new HashMap<>();
         variables.put("contents", formattedContents);
         Prompt prompt = PROMPT_TEMPLATE.apply(variables);
 
-        // 返回 SystemMessage（而不是 UserMessage）
+        // 以 SystemMessage 形式注入（优先级高于 UserMessage）
         return SystemMessage.from(prompt.text());
     }
 }

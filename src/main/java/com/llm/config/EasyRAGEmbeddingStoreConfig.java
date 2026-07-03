@@ -21,10 +21,30 @@ import java.util.*;
 
 import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 
+/**
+ * Milvus 向量存储 & 文档同步配置。
+ * <p>
+ * 这是整个 RAG 系统的存储层基础，负责：
+ * <ul>
+ *   <li><b>EmbeddingModel Bean</b> — 本地 BGE-small-zh 模型（512 维），做文本向量化</li>
+ *   <li><b>EmbeddingStore Bean</b> — Milvus 向量数据库客户端，存储文档向量</li>
+ *   <li><b>增量同步</b> — 启动时扫描文档目录，基于 SHA-256 指纹增量更新 Milvus</li>
+ * </ul>
+ * <p>
+ * 模型分工：
+ * <pre>
+ * 聊天  → DeepSeek（远程 API）
+ * 向量化 → BGE-small-zh（本地 ONNX，无 API 成本）
+ * 存储  → Milvus（远程向量库）
+ * 指纹  → MySQL（rag_document_fingerprint 表）
+ * </pre>
+ * <p>
+ * 同步逻辑：见 {@link #syncDocuments(EmbeddingStore, EmbeddingModel)} 方法。
+ */
 @Configuration
 public class EasyRAGEmbeddingStoreConfig {
 
-    /** 元数据 key，用于标记向量所属的源文件 */
+    /** 写入 Milvus 时打在每条向量上的元数据 key，标记它来自哪个源文件 */
     private static final String META_DOC_SOURCE = "doc_source";
 
     @Value("${langchain4j.milvus.host}")
