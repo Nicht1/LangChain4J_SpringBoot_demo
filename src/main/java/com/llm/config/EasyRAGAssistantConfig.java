@@ -4,6 +4,7 @@ import com.llm.assistant.EasyRAGAssistant;
 import com.llm.store.DatabaseChatMemoryStore;
 import com.llm.tool.LlmTool;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
@@ -32,12 +33,12 @@ public class EasyRAGAssistantConfig {
 
     @Bean
     public EasyRAGAssistantFactory easyRAGAssistantFactory(ChatModel chatModel,
-                                                             DatabaseChatMemoryStore memoryStore,
                                                              List<LlmTool> tools,
-                                                           ContentRetriever contentRetriever) {
+                                                           ContentRetriever contentRetriever,
+                                                           ChatMemoryProvider chatMemoryProvider) {
         System.out.println("🔧 已注入工具数量: " + tools.size());
         tools.forEach(t -> System.out.println(" - " + t.getClass().getName()));
-        return new EasyRAGAssistantConfig.EasyRAGAssistantFactory(chatModel, memoryStore, tools, contentRetriever);
+        return new EasyRAGAssistantConfig.EasyRAGAssistantFactory(chatModel, tools, contentRetriever, chatMemoryProvider);
     }
 
     /**
@@ -49,18 +50,19 @@ public class EasyRAGAssistantConfig {
      */
     public static class EasyRAGAssistantFactory {
         private final ChatModel chatModel;
-        private final DatabaseChatMemoryStore memoryStore;
         private final List<LlmTool> tools;
         private final ContentRetriever contentRetriever;
 
+        private final ChatMemoryProvider chatMemoryProvider;
+
+
         public EasyRAGAssistantFactory(ChatModel chatModel,
-                                       DatabaseChatMemoryStore memoryStore,
                                        List<LlmTool> tools,
-                                       ContentRetriever contentRetriever) {
+                                       ContentRetriever contentRetriever, ChatMemoryProvider chatMemoryProvider) {
             this.chatModel = chatModel;
-            this.memoryStore = memoryStore;
             this.tools = tools;
             this.contentRetriever = contentRetriever;
+            this.chatMemoryProvider = chatMemoryProvider;
         }
 
         /**
@@ -70,15 +72,11 @@ public class EasyRAGAssistantConfig {
          * @return 绑定该会话的 EasyRAGAssistant 实例
          */
         public EasyRAGAssistant createEasyRAGAssistant(String sessionId) {
-            ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                    .id(sessionId)
-                    .maxMessages(40)
-                    .chatMemoryStore(memoryStore)
-                    .build();
+
 
             return AiServices.builder(EasyRAGAssistant.class)
                     .chatModel(chatModel)
-                    .chatMemory(chatMemory)
+                    .chatMemoryProvider(chatMemoryProvider)
                     .contentRetriever(contentRetriever)  // ← 核心差异：注入 RAG 检索器
                     .tools(new ArrayList<>(tools))
                     .build();

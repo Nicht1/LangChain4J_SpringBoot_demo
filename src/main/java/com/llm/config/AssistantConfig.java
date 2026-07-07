@@ -4,6 +4,7 @@ import com.llm.assistant.Assistant;
 import com.llm.store.DatabaseChatMemoryStore;
 import com.llm.tool.LlmTool;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
@@ -39,10 +40,11 @@ public class AssistantConfig {
     @Bean
     public AssistantFactory assistantFactory(ChatModel chatModel,
                                              DatabaseChatMemoryStore memoryStore,
-                                             List<LlmTool> tools) {
+                                             List<LlmTool> tools,
+                                             ChatMemoryProvider chatMemoryProvider) {
         System.out.println("🔧 已注入工具数量: " + tools.size());
         tools.forEach(t -> System.out.println(" - " + t.getClass().getName()));
-        return new AssistantFactory(chatModel, memoryStore, tools);
+        return new AssistantFactory(chatModel, memoryStore, tools,  chatMemoryProvider);
     }
 
     /**
@@ -59,13 +61,16 @@ public class AssistantConfig {
         private final ChatModel chatModel;
         private final DatabaseChatMemoryStore memoryStore;
         private final List<LlmTool> tools;
+        private final ChatMemoryProvider chatMemoryProvider;
+
 
         public AssistantFactory(ChatModel chatModel,
                                 DatabaseChatMemoryStore memoryStore,
-                                List<LlmTool> tools) {
+                                List<LlmTool> tools, ChatMemoryProvider chatMemoryProvider) {
             this.chatModel = chatModel;
             this.memoryStore = memoryStore;
             this.tools = tools;
+            this.chatMemoryProvider = chatMemoryProvider;
         }
 
         /**
@@ -75,17 +80,11 @@ public class AssistantConfig {
          * @return 绑定该会话的 Assistant 代理实例
          */
         public Assistant createAssistant(String sessionId) {
-            // 1. 构建会话级记忆：滑动窗口 40 条，MySQL 持久化
-            ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                    .id(sessionId)
-                    .maxMessages(40)
-                    .chatMemoryStore(memoryStore)
-                    .build();
 
             // 2. 组装 AiServices：ChatModel + Memory + Tools 三合一
             return AiServices.builder(Assistant.class)
                     .chatModel(chatModel)
-                    .chatMemory(chatMemory)
+                    .chatMemoryProvider(chatMemoryProvider)
                     .tools(new ArrayList<>(tools))
                     .build();
         }

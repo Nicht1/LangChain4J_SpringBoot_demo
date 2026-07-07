@@ -4,6 +4,7 @@ import com.llm.assistant.StreamingAssistant;
 import com.llm.store.DatabaseChatMemoryStore;
 import com.llm.tool.LlmTool;
 import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.service.AiServices;
@@ -30,11 +31,11 @@ public class StreamingAssistantConfig {
 
     @Bean
     public StreamingAssistantFactory streamingAssistantFactory(StreamingChatModel streamingChatModel,
-                                                             DatabaseChatMemoryStore memoryStore,
-                                                             List<LlmTool> tools) {
+                                                             List<LlmTool> tools,
+                                                               ChatMemoryProvider chatMemoryProvider) {
         System.out.println("🔧 已注入工具数量: " + tools.size());
         tools.forEach(t -> System.out.println(" - " + t.getClass().getName()));
-        return new StreamingAssistantFactory(streamingChatModel, memoryStore, tools);
+        return new StreamingAssistantFactory(streamingChatModel, tools, chatMemoryProvider);
     }
 
     /**
@@ -45,14 +46,13 @@ public class StreamingAssistantConfig {
      */
     public static class StreamingAssistantFactory {
         private final StreamingChatModel streamingChatModel;
-        private final DatabaseChatMemoryStore memoryStore;
         private final List<LlmTool> tools;
+        private final ChatMemoryProvider chatMemoryProvider;
 
         public StreamingAssistantFactory(StreamingChatModel streamingChatModel,
-                                DatabaseChatMemoryStore memoryStore,
-                                List<LlmTool> tools) {
+                                         List<LlmTool> tools, ChatMemoryProvider chatMemoryProvider) {
             this.streamingChatModel = streamingChatModel;
-            this.memoryStore = memoryStore;
+            this.chatMemoryProvider = chatMemoryProvider;
             this.tools = tools;
         }
 
@@ -62,16 +62,12 @@ public class StreamingAssistantConfig {
          * @param sessionId 会话标识
          * @return 返回 TokenStream 的流式 Assistant 代理
          */
+        //TODO 需要修改 改为 Provider 模式
         public StreamingAssistant createStreamingAssistant(String sessionId) {
-            ChatMemory chatMemory = MessageWindowChatMemory.builder()
-                    .id(sessionId)
-                    .maxMessages(40)
-                    .chatMemoryStore(memoryStore)
-                    .build();
 
             return AiServices.builder(StreamingAssistant.class)
                     .streamingChatModel(streamingChatModel)  // ← 流式模型
-                    .chatMemory(chatMemory)
+                    .chatMemoryProvider(chatMemoryProvider)
                     .tools(new ArrayList<>(tools))
                     .build();
         }
