@@ -168,7 +168,7 @@ public class StreamingChatService {
     /** 从缓存获取或创建流式 Assistant */
     private StreamingAssistant getOrCreateStreamingAssistant(String sessionId) {
         return streamingAssistants.computeIfAbsent(sessionId,
-                streamingAssistantFactory::createStreamingAssistant);
+                k -> streamingAssistantFactory.createStreamingAssistant());
     }
 
     /** 停止指定会话的流式传输（从活跃列表中移除） */

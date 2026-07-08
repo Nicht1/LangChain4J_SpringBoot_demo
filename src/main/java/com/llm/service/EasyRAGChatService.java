@@ -66,7 +66,7 @@ public class EasyRAGChatService {
      * 获取或创建助手
      */
     private EasyRAGAssistant getOrCreateAssistant(String sessionId) {
-        return sessionAssistants.computeIfAbsent(sessionId, assistantFactory::createEasyRAGAssistant);
+        return sessionAssistants.computeIfAbsent(sessionId, k -> assistantFactory.createEasyRAGAssistant());
 
     }
 

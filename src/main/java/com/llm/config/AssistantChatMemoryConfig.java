@@ -58,9 +58,9 @@ public class AssistantChatMemoryConfig {
         }
 
         /**
-         * 创建使用 ChatMemoryProvider 的 Assistant。
+         * 创建使用 ChatMemoryProvider 的 Assistant（无参，记忆由 @MemoryId 驱动）。
          */
-        public AssistantChatMemory createAssistant(String sessionId) {
+        public AssistantChatMemory createAssistant() {
             return AiServices.builder(AssistantChatMemory.class)
                     .chatModel(chatModel)
                     .chatMemoryProvider(chatMemoryProvider)  // ← 声明式记忆管理

@@ -50,7 +50,7 @@ public class AssistantConfig {
     /**
      * Assistant 工厂。
      * <p>
-     * 每次调用 {@link #createAssistant(String)} 会：
+     * 每次调用 {@link #createAssistant()} 会：
      * <ol>
      *   <li>创建独立的 MessageWindowChatMemory（最近 40 条）</li>
      *   <li>通过 AiServices.builder 组装 ChatModel + ChatMemory + Tools</li>
@@ -74,12 +74,11 @@ public class AssistantConfig {
         }
 
         /**
-         * 为指定会话创建一个带独立记忆的 Assistant。
+         * 创建 Assistant（使用 Provider 模式，记忆由框架自动管理）。
          *
-         * @param sessionId 会话标识，用作 ChatMemory 的 memoryId
-         * @return 绑定该会话的 Assistant 代理实例
+         * @return Assistant 代理实例
          */
-        public Assistant createAssistant(String sessionId) {
+        public Assistant createAssistant() {
 
             // 2. 组装 AiServices：ChatModel + Memory + Tools 三合一
             return AiServices.builder(Assistant.class)

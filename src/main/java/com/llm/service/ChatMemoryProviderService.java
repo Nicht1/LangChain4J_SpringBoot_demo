@@ -91,7 +91,7 @@ public class ChatMemoryProviderService {
      * 获取或创建助手
      */
     private AssistantChatMemory getOrCreateAssistant(String sessionId) {
-        return sessionAssistants.computeIfAbsent(sessionId, assistantChatMemoryFactory::createAssistant);
+        return sessionAssistants.computeIfAbsent(sessionId, k -> assistantChatMemoryFactory.createAssistant());
 
     }
 

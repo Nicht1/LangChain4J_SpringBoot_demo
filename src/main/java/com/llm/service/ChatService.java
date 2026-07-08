@@ -91,7 +91,7 @@ public class ChatService {
      * 获取或创建助手
      */
     private Assistant getOrCreateAssistant(String sessionId) {
-        return sessionAssistants.computeIfAbsent(sessionId, assistantFactory::createAssistant);
+        return sessionAssistants.computeIfAbsent(sessionId, k -> assistantFactory.createAssistant());
 
     }
 

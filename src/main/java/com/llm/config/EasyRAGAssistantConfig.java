@@ -66,12 +66,11 @@ public class EasyRAGAssistantConfig {
         }
 
         /**
-         * 为指定会话创建带 RAG 能力的 Assistant。
+         * 创建带 RAG 能力的 Assistant（使用 Provider 模式）。
          *
-         * @param sessionId 会话标识
-         * @return 绑定该会话的 EasyRAGAssistant 实例
+         * @return EasyRAGAssistant 实例
          */
-        public EasyRAGAssistant createEasyRAGAssistant(String sessionId) {
+        public EasyRAGAssistant createEasyRAGAssistant() {
 
 
             return AiServices.builder(EasyRAGAssistant.class)

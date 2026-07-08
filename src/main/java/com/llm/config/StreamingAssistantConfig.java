@@ -57,13 +57,11 @@ public class StreamingAssistantConfig {
         }
 
         /**
-         * 为指定会话创建流式 Assistant。
+         * 创建流式 Assistant（使用 Provider 模式，记忆由框架自动管理）。
          *
-         * @param sessionId 会话标识
          * @return 返回 TokenStream 的流式 Assistant 代理
          */
-        //TODO 需要修改 改为 Provider 模式
-        public StreamingAssistant createStreamingAssistant(String sessionId) {
+        public StreamingAssistant createStreamingAssistant() {
 
             return AiServices.builder(StreamingAssistant.class)
                     .streamingChatModel(streamingChatModel)  // ← 流式模型
