@@ -11,11 +11,25 @@
     <groupId>com.llm</groupId>
     <artifactId>llm</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <!-- 聚合器：只做父 POM + 依赖管理，不包含源码 -->
+    <packaging>pom</packaging>
     <name>LLM-Spring</name>
-    <description>LLM-Spring</description>
+    <description>LLM-Spring 多模块工程</description>
     <url/>
+
+    <!-- ============================================================
+         子模块：
+           llm-app  — 主项目（多出口：chat / easyRagChat / chatMemoryProvider / stream）
+           llm-mini — 极简流式 Chat 模块（只保留一个流式输出出口 + 智能体）
+         ============================================================ -->
+    <modules>
+        <module>llm-app</module>
+        <module>llm-mini</module>
+    </modules>
+
     <build>
         <plugins>
+            <!-- 编译统一使用 JDK 17（Maven 自身可运行在低版本 JVM 上，fork 出 javac 17） -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -53,94 +67,5 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-        <!-- LangChain4j 核心依赖 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- LangChain4j Easy RAG -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-easy-rag</artifactId>
-        </dependency>
-
-        <!-- OpenAI 集成 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- Reactor 支持 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-reactor</artifactId>
-        </dependency>
-
-        <!-- AOP -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-
-        <!-- ollama 本地部署 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-ollama-spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- 添加 Web 支持（可选但推荐） -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- WebFlux -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-webflux</artifactId>-->
-<!--        </dependency>-->
-
-
-
-        <!-- MyBatis Plus -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-            <version>3.5.7</version>
-        </dependency>
-
-        <!-- 数据库 -->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.31</version>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-milvus</artifactId>
-        </dependency>
-
-        <!-- BGE-small-zh 中文 embedding 模型（本地运行，512维，无需 API） -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-embeddings-bge-small-zh</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 
 </project>

@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a25addc1-8f27-473e-a37d-ef4c27c2d1c2" name="更改" comment="refactor: 优化架构">
+      <change afterPath="$PROJECT_DIR$/.idea/.cache/.Apifox_Helper/.toolWindow.db" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/ApifoxUploaderProjectSetting.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/LlmSpringApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/assistant/Assistant.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/assistant/AssistantChatMemory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/assistant/EasyRAGAssistant.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/assistant/StreamingAssistant.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/AssistantChatMemoryConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/AssistantConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/ChatMemoryProviderConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/CorsConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/EasyRAGAssistantConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/EasyRAGContentInjector.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/EasyRAGContentRetriever.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/EasyRAGEmbeddingStoreConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/EasyRAGQueryTransformer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/EasyRAGRetrievalConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/MilvusDirectContentRetriever.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/MilvusManualCollectionConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/MyToolExecutionRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/config/StreamingAssistantConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/controller/ChatController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/controller/ChatMemoryProviderController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/controller/EasyRAGChatController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/controller/StreamingChatController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/mapper/ChatMessageEntityMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/mapper/ChatSessionMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/mapper/ChatToolCallMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/mapper/RagDocumentFingerprintMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/mapper/UserMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/pojo/ChatMessageEntity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/pojo/ChatSession.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/pojo/ChatToolCall.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/pojo/RagDocumentFingerprint.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/pojo/StreamingSessionState.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/pojo/User.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/service/ChatMemoryProviderService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/service/ChatService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/service/ChatSessionService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/service/EasyRAGChatService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/service/RagDocumentFingerprintService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/service/StreamingChatService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/service/UserService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/store/DatabaseChatMemoryStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/tool/CommonTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/tool/LlmTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/tool/TimeTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/tool/UserTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/util/ToolRequestSerializer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/vo/request/MessageRequestVO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/vo/response/MessageResponseVO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/java/com/llm/vo/response/StreamingMessageResponseVO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/main/resources/documentation/公司简介.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-app/src/test/java/com/llm/LlmSpringApplicationTests.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/MiniApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/assistant/StreamingRagAssistant.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/config/ChatMemoryProviderConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/config/CorsConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/config/EmbeddingStoreConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/config/RagContentInjector.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/config/RagContentRetriever.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/config/RetrievalAugmentorConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/config/StreamingRagAssistantConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/controller/StreamingChatController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/mapper/ChatMessageEntityMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/mapper/ChatSessionMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/mapper/ChatToolCallMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/mapper/RagDocumentFingerprintMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/pojo/ChatMessageEntity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/pojo/ChatSession.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/pojo/ChatToolCall.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/pojo/RagDocumentFingerprint.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/service/ChatSessionService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/service/RagDocumentFingerprintService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/service/StreamingChatService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/store/DatabaseChatMemoryStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/tool/CommonTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/tool/LlmTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/tool/TimeTool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/vo/request/MessageRequestVO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/java/com/llm/mini/vo/response/StreamingMessageResponseVO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/resources/application.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/llm-mini/src/main/resources/documentation/公司简介.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/LlmSpringApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/assistant/Assistant.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/assistant/AssistantChatMemory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/assistant/EasyRAGAssistant.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/assistant/StreamingAssistant.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/AssistantChatMemoryConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/AssistantConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/ChatMemoryProviderConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/CorsConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/EasyRAGAssistantConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/EasyRAGContentInjector.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/EasyRAGContentRetriever.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/EasyRAGEmbeddingStoreConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/EasyRAGQueryTransformer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/EasyRAGRetrievalConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/MyToolExecutionRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/config/StreamingAssistantConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/controller/ChatController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/controller/ChatMemoryProviderController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/controller/EasyRAGChatController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/controller/StreamingChatController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/mapper/ChatMessageEntityMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/mapper/ChatSessionMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/mapper/ChatToolCallMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/mapper/RagDocumentFingerprintMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/mapper/UserMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/pojo/ChatMessageEntity.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/pojo/ChatSession.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/pojo/ChatToolCall.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/pojo/RagDocumentFingerprint.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/pojo/StreamingSessionState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/pojo/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/service/ChatMemoryProviderService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/service/ChatService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/service/ChatSessionService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/service/EasyRAGChatService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/service/RagDocumentFingerprintService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/service/StreamingChatService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/service/UserService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/store/DatabaseChatMemoryStore.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/tool/CommonTool.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/tool/LlmTool.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/tool/TimeTool.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/tool/UserTool.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/util/ToolRequestSerializer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/vo/request/MessageRequestVO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/vo/response/MessageResponseVO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/llm/vo/response/StreamingMessageResponseVO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/documentation/公司简介.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/llm/LlmSpringApplicationTests.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Nicht1&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Nicht1/LangChain4J_SpringBoot_demo.git&quot;,
+    &quot;accountId&quot;: &quot;21c6fae9-318f-4f3d-9bdc-2ff490ca6988&quot;
+  }
+}</component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="customMavenHome" value="D:\apache-maven-3.9.9" />
+        <option name="mavenHomeTypeForPersistence" value="CUSTOM" />
+        <option name="userSettingsFile" value="D:\apache-maven-3.9.9\conf\settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="MavenRunner">
+    <option name="delegateBuildToMaven" value="true" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="37EhlbQxfKh4PWvOQYcrfjpRy1C" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Maven.llm [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.llm [compile].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.llm [install].executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;Spring Boot.LlmSpringApplication.executor&quot;: &quot;Debug&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;17&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/work/master/ws-operation-system&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;项目&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.project.maven.runner&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="ReactorSettings">
+    <option name="notificationShown" value="true" />
+  </component>
+  <component name="RunManager" selected="Spring Boot.LlmSpringApplication">
+    <configuration name="LlmSpringApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <module name="llm-app" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.llm.LlmSpringApplication" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.llm.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MiniApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="llm-mini" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.llm.mini.MiniApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Spring Boot.LlmSpringApplication" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-b114ca120d71-intellij.indexing.shared.core-IU-242.20224.419" />
+        <option value="bundled-js-predefined-d6986cc7102b-410509235cf1-JavaScript-IU-242.20224.419" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="a25addc1-8f27-473e-a37d-ef4c27c2d1c2" name="更改" comment="refactor: 恢复 ContentRetrieval" />
+      <created>1766474289484</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1766474289484</updated>
+      <workItem from="1766474290507" duration="1669000" />
+      <workItem from="1766567302416" duration="598000" />
+      <workItem from="1766571230049" duration="47000" />
+      <workItem from="1766571281990" duration="32000" />
+      <workItem from="1766571325922" duration="19053000" />
+      <workItem from="1769432316325" duration="4460000" />
+      <workItem from="1771895793189" duration="5928000" />
+      <workItem from="1775629036016" duration="736000" />
+      <workItem from="1778237915568" duration="1894000" />
+      <workItem from="1778321031210" duration="65000" />
+      <workItem from="1779259000193" duration="7078000" />
+      <workItem from="1779411902096" duration="1182000" />
+      <workItem from="1779677527807" duration="1192000" />
+      <workItem from="1782891759099" duration="7841000" />
+      <workItem from="1782901859787" duration="8699000" />
+      <workItem from="1782968523121" duration="122550000" />
+      <workItem from="1784023088456" duration="4261000" />
+      <workItem from="1784186888907" duration="3923000" />
+      <workItem from="1785749521195" duration="2495000" />
+      <workItem from="1787820410395" duration="17088000" />
+    </task>
+    <task id="LOCAL-00001" summary="feat: 添加 ollma 本地部署使用方法">
+      <option name="closed" value="true" />
+      <created>1770276346614</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1770276346614</updated>
+    </task>
+    <task id="LOCAL-00002" summary="feat: 添加 milvus Rag 向量数据库支持">
+      <option name="closed" value="true" />
+      <created>1782978511252</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1782978511252</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat: 优化项目结构，添加对应注释">
+      <option name="closed" value="true" />
+      <created>1783074292362</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1783074292362</updated>
+    </task>
+    <task id="LOCAL-00004" summary="feat: 优化项目结构，添加对应注释">
+      <option name="closed" value="true" />
+      <created>1783074314848</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1783074314848</updated>
+    </task>
+    <task id="LOCAL-00005" summary="feat: 优化 Assistant 的 chatMemory 为 provider">
+      <option name="closed" value="true" />
+      <created>1783424273717</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1783424273718</updated>
+    </task>
+    <task id="LOCAL-00006" summary="feat: 优化 createStreamingAssistant 去掉多余的 sessionId">
+      <option name="closed" value="true" />
+      <created>1783488368036</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1783488368036</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="feat: 添加 ollma 本地部署使用方法" />
+    <MESSAGE value="feat: 添加 milvus Rag 向量数据库支持" />
+    <MESSAGE value="feat: 优化项目结构，添加对应注释" />
+    <MESSAGE value="feat: 优化 Assistant 的 chatMemory 为 provider" />
+    <MESSAGE value="feat: 优化 createStreamingAssistant 去掉多余的 sessionId" />
+    <MESSAGE value="refactor: 优化架构" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: 优化架构" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
