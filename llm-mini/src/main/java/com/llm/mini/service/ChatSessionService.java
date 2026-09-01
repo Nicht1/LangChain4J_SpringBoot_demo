@@ -24,12 +24,13 @@ public class ChatSessionService {
     }
 
     /**
-     * 创建或获取会话
+     * 创建或获取会话（按 userId 隔离：同一 sessionId 只能属于同一用户）
      */
     public ChatSession getOrCreateSession(String sessionId, Long userId) {
         if (!ObjectUtils.isEmpty(sessionId)) {
             ChatSession session = chatSessionMapper.selectOne(new LambdaQueryWrapper<ChatSession>()
                     .eq(ChatSession::getSessionId, sessionId)
+                    .eq(ChatSession::getUserId, userId)   // ← 多用户隔离：会话按用户归属
                     .eq(ChatSession::getDeleted, 0));
             if (!ObjectUtils.isEmpty(session)) {
                 return session;

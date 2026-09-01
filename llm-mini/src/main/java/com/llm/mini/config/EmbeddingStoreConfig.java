@@ -66,6 +66,14 @@ public class EmbeddingStoreConfig {
     @Value("${langchain4j.milvus.document-path:D:\\work\\LLM-Spring\\llm-mini\\src\\main\\resources\\documentation}")
     private String documentPath;
 
+    /** 摄入文档时默认打的归属用户 ID 标签（RAG 检索按 userId 过滤） */
+    @Value("${llm.rag.default-user-id:123}")
+    private long defaultUserId;
+
+    /** 摄入文档时默认打的归属智能体 ID 标签（RAG 检索按 agentId 过滤） */
+    @Value("${llm.rag.default-agent-id:1}")
+    private long defaultAgentId;
+
     private final RagDocumentFingerprintService fingerprintService;
 
     public EmbeddingStoreConfig(RagDocumentFingerprintService fingerprintService) {
@@ -154,6 +162,11 @@ public class EmbeddingStoreConfig {
 
             // 写入向量到 Milvus
             document.metadata().put(META_DOC_SOURCE, filePath);
+            // 多租户 RAG 隔离标签：摄入时打上归属 userId / agentId，
+            // 检索时 RagContentRetriever 按 @V("userId")/@V("agentId") 拼 AND 过滤，
+            // 从而保证"对应 agent 只检索到自己的知识库"（后续可按文档上传来源覆盖这两个值）
+            document.metadata().put("userId", String.valueOf(defaultUserId));
+            document.metadata().put("agentId", String.valueOf(defaultAgentId));
             EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                     .embeddingStore(store)
                     .embeddingModel(embeddingModel)

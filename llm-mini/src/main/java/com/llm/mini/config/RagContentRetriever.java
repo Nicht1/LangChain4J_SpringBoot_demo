@@ -7,14 +7,17 @@ import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.Query;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.filter.Filter;
+import dev.langchain4j.store.embedding.filter.logical.And;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 
 import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 
 /**
- * RAG 内容检索器（向量迁移）：将用户消息向量化后，在 Milvus 中做相似度检索。
+ * RAG 内容检索器：将用户消息向量化后，在 Milvus 中做相似度检索。
  * <p>
  * 工作流程：
  * <pre>
@@ -24,8 +27,11 @@ import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metad
  * 过滤掉相似度 &lt; 0.6 的结果
  * </pre>
  * <p>
- * dynamicFilter — 按 userId 过滤文档，实现租户隔离。
- * 用户 ID 由智能体的 {@code @V("userId")} 传入 {@code Query.metadata().invocationParameters()}。
+ * dynamicFilter —— 多租户 RAG 隔离：
+ * 从 {@code Query.metadata().invocationParameters()} 读取智能体方法上的
+ * {@code @V("userId")} 与 {@code @V("agentId")}，拼出
+ * {@code metadata["userId"]==x AND metadata["agentId"]==y}，
+ * 保证每个用户/智能体只检索自己的知识库（向量在摄入时已打 userId/agentId 标签，见 EmbeddingStoreConfig）。
  */
 @Component
 public class RagContentRetriever implements ContentRetriever {
@@ -40,16 +46,23 @@ public class RagContentRetriever implements ContentRetriever {
                 .embeddingModel(embeddingModel)   // BGE-small-zh 做查询向量化
                 .maxResults(3)                     // 最多返回 3 条匹配
                 .minScore(0.6)                     // 相似度阈值：低于 0.6 的丢弃
-                // 动态过滤器：多租户隔离
-                // 从 @V("userId") 中读取当前用户 ID，生成 Milvus JSON 过滤表达式:
-                //   metadata["userId"] == "123"
+                // 动态过滤器：多租户 RAG 隔离
                 .dynamicFilter((query) -> {
-                    Object userId = query.metadata()
+                    Map<String, Object> params = query.metadata()
                             .invocationParameters()
-                            .asMap()
-                            .get("userId");
-                    // 无租户信息则不过滤；否则按 userId 精确过滤（milvus metadata["userId"] == "123"）
-                    return userId == null ? null : metadataKey("userId").isEqualTo(String.valueOf(userId));
+                            .asMap();
+                    Object userId = params.get("userId");
+                    Object agentId = params.get("agentId");
+
+                    Filter filter = null;
+                    if (userId != null) {
+                        filter = metadataKey("userId").isEqualTo(String.valueOf(userId));
+                    }
+                    if (agentId != null) {
+                        Filter agentFilter = metadataKey("agentId").isEqualTo(String.valueOf(agentId));
+                        filter = (filter == null) ? agentFilter : new And(filter, agentFilter);
+                    }
+                    return filter;  // 无任何维度则不过滤
                 })
                 .build();
     }

@@ -4,6 +4,7 @@ import com.llm.mini.assistant.StreamingRagAssistant;
 import com.llm.mini.config.StreamingRagAssistantConfig.StreamingRagAssistantFactory;
 import com.llm.mini.pojo.ChatSession;
 import com.llm.mini.store.DatabaseChatMemoryStore;
+import com.llm.mini.util.MemoryKeyUtil;
 import com.llm.mini.vo.request.MessageRequestVO;
 import com.llm.mini.vo.response.StreamingMessageResponseVO;
 import dev.langchain4j.service.TokenStream;
@@ -19,15 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 流式聊天服务（SSE 实现）—— 本模块唯一的"流式输出 Chat 出口"。
  * <p>
  * 核心机制：LangChain4j 的 {@link TokenStream} + Spring 的 {@link SseEmitter} 双流对接。
- * <pre>
- * StreamingChatModel（逐 token 产生）
- *     ↓ TokenStream.onPartialResponse(t → emitter.send(t))
- * SseEmitter（SSE 事件流）
- *     ↓ text/event-stream
- * 浏览器（EventSource API 消费）
- * </pre>
  * <p>
- * 每个 TokenStream 运行在独立线程中，不阻塞 HTTP 响应线程。
+ * 多用户隔离：用复合 memoryId（{@code userId:agentId:sessionId}）贯穿整条链路——
+ * 历史存取（ChatMemoryProvider）、SYSTEM_MESSAGE 解析（systemMessageProvider）、RAG 过滤（@V）都基于它。
  */
 @Service
 public class StreamingChatService {
@@ -36,7 +31,7 @@ public class StreamingChatService {
     private final DatabaseChatMemoryStore memoryStore;
     private final ChatSessionService chatSessionService;
 
-    /** 会话 → Assistant 实例缓存（避免每次请求重建） */
+    /** 复合 memoryId → Assistant 实例缓存（仅性能缓存，重启后懒重建，不承载持久化） */
     private final Map<String, StreamingRagAssistant> streamingAssistants = new ConcurrentHashMap<>();
 
     @Autowired
@@ -51,33 +46,44 @@ public class StreamingChatService {
     /**
      * 发送消息并返回 SSE 事件流。
      * <p>
-     * TokenStream 的 4 个回调：
-     * <ul>
-     *   <li>onPartialResponse — 每个 token 到达时发送 SSE "message" 事件</li>
-     *   <li>onToolExecuted — LLM 调用工具时发送 SSE "tool" 事件</li>
-     *   <li>onCompleteResponse — 全部生成完毕，发送完整文本并关闭流</li>
-     *   <li>onError — 出错时发送错误事件并关闭流</li>
-     * </ul>
+     * 调用链：
+     * <pre>
+     * 1. getOrCreateSession(sessionId, userId)          — 会话元数据（按用户隔离）
+     * 2. memoryId = userId:agentId:sessionId              — 复合记忆 key
+     * 3. assistant = 缓存.get(memoryId) 或 AiServices.build
+     * 4. assistant.chat(memoryId, message, @V userId, @V agentId)
+     *    → systemMessageProvider 取该 agent 人设（归属校验）
+     *    → ChatMemoryProvider 读该会话历史
+     *    → RAG dynamicFilter(userId+agentId) 查 Milvus → 注入
+     *    → 逐 token SSE 推送
+     * 5. onComplete 写回历史
+     * </pre>
      *
      * @return SseEmitter 实例（由 Spring MVC 管理并输出到响应流）
      */
     public SseEmitter sendMessageStream(MessageRequestVO messageRequestVO) {
-        // 1. 确保会话存在
+        // 1. 确保会话存在（按 userId 隔离）
         ChatSession orCreateSession = chatSessionService.getOrCreateSession(
                 messageRequestVO.getSessionId(), messageRequestVO.getUserId());
         String sessionId = orCreateSession.getSessionId();
 
-        // 2. 创建 SSE 发射器（0 = 永不超时，由逻辑控制关闭）
+        // 2. 复合 memoryId：用户×智能体×会话 三维隔离
+        String memoryId = MemoryKeyUtil.build(
+                messageRequestVO.getUserId(), messageRequestVO.getAgentId(), sessionId);
+
+        // 3. 创建 SSE 发射器（0 = 永不超时，由逻辑控制关闭）
         SseEmitter emitter = new SseEmitter(0L);
 
-        // 3. 独立线程运行 TokenStream（不阻塞 HTTP 线程）
+        // 4. 独立线程运行 TokenStream（不阻塞 HTTP 线程）
         new Thread(() -> {
-            StreamingRagAssistant assistant = getOrCreateStreamingAssistant(sessionId);
+            StreamingRagAssistant assistant = getOrCreateStreamingAssistant(memoryId);
 
             try {
-                // 传入 sessionId（@MemoryId）与 userId（@V，供 RAG dynamicFilter 做租户过滤）
                 TokenStream tokenStream = assistant.chat(
-                        sessionId, messageRequestVO.getMessage(), String.valueOf(messageRequestVO.getUserId()));
+                        memoryId,
+                        messageRequestVO.getMessage(),
+                        String.valueOf(messageRequestVO.getUserId()),
+                        String.valueOf(messageRequestVO.getAgentId()));
 
                 tokenStream
                         // 回调 A：每收到一个 token →
@@ -150,20 +156,22 @@ public class StreamingChatService {
         return emitter;
     }
 
-    /** 从缓存获取或创建流式 RAG Assistant */
-    private StreamingRagAssistant getOrCreateStreamingAssistant(String sessionId) {
-        return streamingAssistants.computeIfAbsent(sessionId,
+    /** 从缓存获取或创建流式 RAG Assistant（按复合 memoryId 缓存） */
+    private StreamingRagAssistant getOrCreateStreamingAssistant(String memoryId) {
+        return streamingAssistants.computeIfAbsent(memoryId,
                 k -> streamingRagAssistantFactory.createStreamingAssistant());
     }
 
-    /** 停止指定会话的流式传输（移除缓存，下次请求重新构建并加载最新记忆） */
-    public boolean stopStreaming(String sessionId) {
-        return streamingAssistants.remove(sessionId) != null;
+    /** 停止指定会话的流式传输（按复合 memoryId 移除缓存，下次请求重建） */
+    public boolean stopStreaming(String sessionId, Long userId, Long agentId) {
+        String memoryId = MemoryKeyUtil.build(userId, agentId, sessionId);
+        return streamingAssistants.remove(memoryId) != null;
     }
 
-    /** 清除会话记忆：移除缓存 + 删除 DB 消息 */
-    public void clearMemory(String sessionId) {
-        streamingAssistants.remove(sessionId);
-        memoryStore.deleteMessages(sessionId);
+    /** 清除会话记忆：按复合 memoryId 移除缓存 + 删除对应 DB 历史 */
+    public void clearMemory(String sessionId, Long userId, Long agentId) {
+        String memoryId = MemoryKeyUtil.build(userId, agentId, sessionId);
+        streamingAssistants.remove(memoryId);
+        memoryStore.deleteMessages(memoryId);
     }
 }

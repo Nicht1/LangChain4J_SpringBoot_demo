@@ -7,19 +7,20 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * 流式聊天控制器 —— 本模块唯一的"流式输出 Chat 出口"。
  * <p>
- * 与主项目的区别：主项目有 4 个聊天出口（chat / easyRagChat / chatMemoryProvider / stream），
- * 本模块只保留这一个流式出口，并已集成 RAG 向量检索 + 会话记忆 + 工具。
+ * 动态智能体：请求体携带 {@code agentId}（+ userId），
+ * 服务端按复合 memoryId 隔离历史 / 解析 SYSTEM_MESSAGE / 过滤 RAG。
  * <p>
  * API 路径：/api/stream/chat
  * <ul>
- *   <li>POST /send   — 发送消息，返回 SSE 事件流（唯一的流式 Chat 出口）</li>
+ *   <li>POST /send   — 发送消息（{agentId, sessionId, userId, message}），返回 SSE 事件流</li>
  *   <li>POST /stop   — 停止当前会话的流式输出</li>
- *   <li>POST /clear  — 清除当前会话记忆</li>
+ *   <li>POST /clear  — 清除当前会话记忆（按 用户+智能体+会话）</li>
  *   <li>GET  /health — 健康检查</li>
  * </ul>
  */
@@ -47,33 +48,38 @@ public class StreamingChatController {
 
     /**
      * 停止指定会话的流式输出。
-     * <p>
-     * 前台用户点了"停止生成"按钮时会调用此接口。
      */
     @PostMapping("/stop")
-    public Map<String, Object> stopStreaming(@RequestParam String sessionId) {
-        boolean stopped = streamingChatService.stopStreaming(sessionId);
-        return Map.of(
-                "success", stopped,
-                "message", stopped ? "流式传输已停止" : "未找到活跃的流式会话",
-                "sessionId", sessionId
-        );
+    public Map<String, Object> stopStreaming(@RequestBody MessageRequestVO messageRequestVO) {
+        boolean stopped = streamingChatService.stopStreaming(
+                messageRequestVO.getSessionId(), messageRequestVO.getUserId(), messageRequestVO.getAgentId());
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", stopped);
+        result.put("message", stopped ? "流式传输已停止" : "未找到活跃的流式会话");
+        result.put("sessionId", messageRequestVO.getSessionId());
+        return result;
     }
 
     /**
-     * 清除指定会话的聊天记忆。
-     * <p>
-     * 同时清理内存中的 Assistant 实例和数据库中的历史消息。
+     * 清除指定会话的聊天记忆（按 用户+智能体+会话 精确定位）。
      */
     @PostMapping("/clear")
-    public Map<String, Object> clearMemory(@RequestParam String sessionId) {
-        streamingChatService.clearMemory(sessionId);
-        return Map.of("success", true, "message", "记忆清除成功", "sessionId", sessionId);
+    public Map<String, Object> clearMemory(@RequestBody MessageRequestVO messageRequestVO) {
+        streamingChatService.clearMemory(
+                messageRequestVO.getSessionId(), messageRequestVO.getUserId(), messageRequestVO.getAgentId());
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "记忆清除成功");
+        result.put("sessionId", messageRequestVO.getSessionId());
+        return result;
     }
 
     @GetMapping("/health")
     public Map<String, Object> health() {
-        return Map.of("status", "UP", "service", "StreamingChatService",
-                "timestamp", System.currentTimeMillis());
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "UP");
+        result.put("service", "StreamingChatService");
+        result.put("timestamp", System.currentTimeMillis());
+        return result;
     }
 }

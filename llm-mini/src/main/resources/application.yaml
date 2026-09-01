@@ -53,6 +53,16 @@ mybatis-plus:
       logic-not-delete-value: 0
       logic-delete-value: 1
 
+# ============================================================
+# 动态智能体 / 多租户 RAG 默认归属
+#   摄入文档时给向量打 userId / agentId 标签，检索时按 @V("userId")/@V("agentId") 过滤
+#   （与 MessageRequestVO 的默认 userId=123、agentId=1 保持一致，保证默认对话 RAG 可用）
+# ============================================================
+llm:
+  rag:
+    default-user-id: 123
+    default-agent-id: 1
+
 logging:
   level:
     root: info
