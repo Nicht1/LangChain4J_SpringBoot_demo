@@ -9,12 +9,27 @@ spring:
     password: 123321
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  # ============================================================
+  # Redis 连接（会话记忆存储）
+  #   默认共享单连接 + 命令流水线，对当前量级足够。
+  #   如需连接池请额外引入 org.apache.commons:commons-pool2，
+  #   否则 lettuce.pool.* 配置会被静默忽略。
+  # ============================================================
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      # password:
+      timeout: 3s
+      connect-timeout: 3s
+
 langchain4j:
   openai:
     # 本模块只需流式聊天模型（DeepSeek），不配置 chat-model
     streaming-chat-model:
       base-url: https://api.deepseek.com
-      api-key: sk-638f7b118bde4766b686310eeb1d2d18
+      api-key: sk-d3443f0a5b7a4efaa118cbefc1cabb1a
       model-name: deepseek-chat
       temperature: 0.7
       max-tokens: 1000
@@ -54,11 +69,28 @@ mybatis-plus:
       logic-delete-value: 1
 
 # ============================================================
-# 动态智能体 / 多租户 RAG 默认归属
-#   摄入文档时给向量打 userId / agentId 标签，检索时按 @V("userId")/@V("agentId") 过滤
-#   （与 MessageRequestVO 的默认 userId=123、agentId=1 保持一致，保证默认对话 RAG 可用）
+# 聊天记忆
+#   store         —— 存储后端：redis（默认，推荐）| mysql
+#                    redis：List + 一条 Lua（DEL+RPUSH+LTRIM+EXPIRE），原子、单次往返，
+#                           天然"只保留最近 N 条"，无需 diff / 索引 / 本地锁
+#                    mysql：行级表 + 摊销修剪，仅当需要按消息查询/审计/多端同步时才用
+#                           配套索引脚本 resources/sql/chat_memory_index.sql
+#   max-messages  —— 语义上限：内存窗口大小 = 存储层保留条数 = 读取条数（三者必须一致）
+#   trim-interval —— 摊销间隔（仅 mysql 后端有意义）
 # ============================================================
 llm:
+  memory:
+    store: redis
+    max-messages: 20              # 每个会话只保留最近 20 条记忆
+    trim-interval: 20             # 仅 mysql 后端：每累计写入 20 条才批量修剪一次
+    redis:
+      key-prefix: "llm:chat:memory:"
+      ttl: 7d                     # 滑动过期：每次写入刷新；0 = 永不过期
+  # ============================================================
+  # 动态智能体 / 多租户 RAG 默认归属
+  #   摄入文档时给向量打 userId / agentId 标签，检索时按 @V("userId")/@V("agentId") 过滤
+  #   （与 MessageRequestVO 的默认 userId=123、agentId=1 保持一致，保证默认对话 RAG 可用）
+  # ============================================================
   rag:
     default-user-id: 123
     default-agent-id: 1

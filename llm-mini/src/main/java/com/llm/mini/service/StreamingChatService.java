@@ -3,11 +3,11 @@ package com.llm.mini.service;
 import com.llm.mini.assistant.StreamingRagAssistant;
 import com.llm.mini.config.StreamingRagAssistantConfig.StreamingRagAssistantFactory;
 import com.llm.mini.pojo.ChatSession;
-import com.llm.mini.store.DatabaseChatMemoryStore;
 import com.llm.mini.util.MemoryKeyUtil;
 import com.llm.mini.vo.request.MessageRequestVO;
 import com.llm.mini.vo.response.StreamingMessageResponseVO;
 import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -28,14 +28,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StreamingChatService {
 
     private final StreamingRagAssistantFactory streamingRagAssistantFactory;
-    private final DatabaseChatMemoryStore memoryStore;
+    private final ChatMemoryStore memoryStore;
     private final ChatSessionService chatSessionService;
 
     /** 复合 memoryId → Assistant 实例缓存（仅性能缓存，重启后懒重建，不承载持久化） */
     private final Map<String, StreamingRagAssistant> streamingAssistants = new ConcurrentHashMap<>();
 
+    /**
+     * 注意：这里依赖的是 {@link ChatMemoryStore} <b>接口</b>，不是具体实现。
+     * 存储后端由 {@code llm.memory.store} 通过 {@code @ConditionalOnProperty} 决定
+     * （redis 默认 / mysql 可选），注入具体实现类会导致另一种后端下"找不到 Bean"而启动失败。
+     */
     @Autowired
-    public StreamingChatService(DatabaseChatMemoryStore memoryStore,
+    public StreamingChatService(ChatMemoryStore memoryStore,
                                 ChatSessionService chatSessionService,
                                 StreamingRagAssistantFactory streamingRagAssistantFactory) {
         this.memoryStore = memoryStore;
