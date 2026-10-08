@@ -29,7 +29,7 @@ langchain4j:
     # 本模块只需流式聊天模型（DeepSeek），不配置 chat-model
     streaming-chat-model:
       base-url: https://api.deepseek.com
-      api-key: sk-d3443f0a5b7a4efaa118cbefc1cabb1a
+      api-key:
       model-name: deepseek-chat
       temperature: 0.7
       max-tokens: 1000
