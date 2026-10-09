@@ -1,7 +1,8 @@
 package com.llm.mini.config;
 
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.input.Prompt;
 import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.rag.content.Content;
@@ -14,18 +15,78 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * RAG 内容注入器（向量迁移）：将检索到的文档内容格式化为 SystemMessage，
- * 注入到对话上下文中供 LLM 参考。
+ * RAG 内容注入器：把检索到的文档片段并入<b>用户消息</b>，供 LLM 参考。
+ *
+ * <h2>⚠️ 契约要点（改这里之前务必先读）</h2>
+ * {@link ContentInjector} 的语义是"把 contents 注入<b>到给定的 UserMessage 里</b>"：
+ * <pre>
+ * ChatMessage inject(List&lt;Content&gt; contents, ChatMessage chatMessage);
+ * </pre>
+ * 官方 javadoc 明确写着 <i>"Injects given Contents into a given UserMessage …
+ * the ChatMessage <b>into which</b> the Contents are to be injected.
+ * Currently, only UserMessage is supported."</i>
  * <p>
- * 注入时机：在 ChatModel 被调用之前，由 LangChain4j RAG 框架自动触发。
- * 注入形式：SystemMessage（而非 UserMessage），优先级更高。
+ * 也就是说：<b>这个返回值会替换掉请求里的那条用户消息</b>（见
+ * {@code DefaultRetrievalAugmentor.augment()} —— 它把 inject 的返回值直接作为
+ * {@code AugmentationResult.chatMessage()}）。因此：
+ * <ul>
+ *   <li><b>必须把原始用户消息带上</b>（模板里的 {@code {{userMessage}}}），
+ *       否则用户的问题会被整条丢掉，模型只能对着文档空谈、答非所问；</li>
+ *   <li><b>必须返回 UserMessage</b>。曾经这里返回的是
+ *       {@code SystemMessage.from(prompt.text())}，且模板只有 {@code {{contents}}}——
+ *       结果是"检索一旦命中，用户消息就被一条只含文档的 SystemMessage 顶替"，
+ *       问题丢失。这与官方默认实现 {@code DefaultContentInjector} 的行为不一致
+ *       （它的模板是 {@code {{userMessage}}\n\nAnswer using the following information:\n{{contents}}}，
+ *       返回值是 {@code userMessage.toBuilder().contents(...)}，仍是 UserMessage）。</li>
+ * </ul>
+ * 如果想要"文档优先级更高"的效果，正确做法是<b>在模板文字里把要求写强</b>，
+ * 或者另用 {@code chatRequestTransformer} 追加一条 SystemMessage，
+ * <b>而不是</b>在这里把用户消息换掉。
+ *
+ * <h2>注入时机</h2>
+ * 在 ChatModel 被调用之前，由 LangChain4j 的 RAG 框架自动触发（需要检索命中，
+ * 即相似度 ≥ {@code minScore}，见 {@code RagContentRetriever}）。
+ *
+ * <h2>⚠️ 注入结果会被写进会话历史（2026-10-08 实测确认，勿凭直觉假设）</h2>
+ * 这个返回值不只用于本次请求——<b>框架会把它当作"那条用户消息"存进 ChatMemory</b>。
+ * 实测（Redis 记忆后端）会话窗口里长这样：
+ * <pre>
+ * SYSTEM : 你是一个专业的AI助手...
+ * USER   : 维森·安防系列（VisonGuard）主要有哪些功能？      ← 原问题
+ *
+ *          以下是从知识库中检索到的相关文档内容，请优先...   ← 检索到的文档正文（！）
+ * AI     : 根据知识库文档，...
+ * </pre>
+ * 那条 USER 的 JSON 长度约 <b>1045 字符</b>，其中大部分是文档正文；并且
+ * <b>后续轮次会把它当历史一起重发</b>——实测第二轮问一个与知识库无关的问题
+ * （"1+1等于几？"）时，请求体里依然带着上一轮的检索文档。
+ * <p>
+ * 影响两点：
+ * <ol>
+ *   <li><b>重复计费</b>：检索到的文档被固化进历史，之后每一轮都要重新发送；</li>
+ *   <li><b>挤占窗口</b>：窗口只有 maxMessages（默认 20）条，一条被文档撑到 1KB+，
+ *       实际能记住的对话轮数明显变少。</li>
+ * </ol>
+ * <p>
+ * 如果不希望文档进历史，就不要用 {@code .retrievalAugmentor(...)}，
+ * 改为在 {@code .chatRequestTransformer((request, memoryId) -> ...)} 里自己检索 + 注入：
+ * 那样只改"本次发出去的请求"，记忆里留的仍是原始消息（顺带也能把文档放进 SystemMessage
+ * 以获得更高优先级，而不必牺牲用户消息）。
  */
 @Component
 public class RagContentInjector implements ContentInjector {
 
-    /** 注入模板：{{contents}} 会被替换为检索到的文档文本 */
+    /**
+     * 注入模板。
+     * <p>
+     * {@code {{userMessage}}} —— <b>必需</b>，用户原始问题；
+     * {@code {{contents}}} —— 检索到的文档片段（多段用 --- 分隔）。
+     * 二者缺一不可：只留 contents 就等于把问题删了。
+     */
     private static final PromptTemplate PROMPT_TEMPLATE = PromptTemplate.from("""
-            以下是从知识库中检索到的相关文档内容，请基于这些信息来回答用户的问题:
+            {{userMessage}}
+
+            以下是从知识库中检索到的相关文档内容，请优先基于这些信息来回答上面的问题:
 
             {{contents}}
 
@@ -38,13 +99,18 @@ public class RagContentInjector implements ContentInjector {
     /**
      * 执行注入。
      * <p>
-     * 如果检索结果为空，直接返回原消息（走正常对话流程，不做 RAG）。
-     * 如果有检索结果，用模板包装后返回 SystemMessage。
+     * 检索结果为空 → 原样返回（走正常对话，不做 RAG 增强）。
+     * 非 UserMessage → 原样返回（契约目前只支持 UserMessage，别把内容弄丢）。
      */
     @Override
     public ChatMessage inject(List<Content> contents, ChatMessage chatMessage) {
         if (contents == null || contents.isEmpty()) {
             return chatMessage;  // 无检索结果，不做 RAG 增强
+        }
+        if (!(chatMessage instanceof UserMessage userMessage)) {
+            // 框架只对 UserMessage 调用注入；真出现别的类型，宁可原样返回也不要丢内容
+            System.out.println("⚠ RAG 注入跳过：消息类型不是 UserMessage，实际=" + chatMessage.type());
+            return chatMessage;
         }
 
         // 拼接多个文档片段，用 --- 分隔
@@ -52,12 +118,15 @@ public class RagContentInjector implements ContentInjector {
                 .map(content -> content.textSegment().text())
                 .collect(Collectors.joining("\n\n---\n\n"));
 
-        // 模板变量替换
         Map<String, Object> variables = new HashMap<>();
+        variables.put("userMessage", userMessage.singleText());   // ★ 原问题必须带上
         variables.put("contents", formattedContents);
         Prompt prompt = PROMPT_TEMPLATE.apply(variables);
 
-        // 以 SystemMessage 形式注入（优先级高于 UserMessage）
-        return SystemMessage.from(prompt.text());
+        // 保持 UserMessage 类型：把增强后的整段文本并回用户消息
+        // （与官方 DefaultContentInjector 的做法一致；返回 SystemMessage 会顶替掉用户消息）
+        return userMessage.toBuilder()
+                .contents(List.of(TextContent.from(prompt.text())))
+                .build();
     }
 }
