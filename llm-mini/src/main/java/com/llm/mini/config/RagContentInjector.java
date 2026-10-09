@@ -47,31 +47,18 @@ import java.util.stream.Collectors;
  * 在 ChatModel 被调用之前，由 LangChain4j 的 RAG 框架自动触发（需要检索命中，
  * 即相似度 ≥ {@code minScore}，见 {@code RagContentRetriever}）。
  *
- * <h2>⚠️ 注入结果会被写进会话历史（2026-10-08 实测确认，勿凭直觉假设）</h2>
- * 这个返回值不只用于本次请求——<b>框架会把它当作"那条用户消息"存进 ChatMemory</b>。
- * 实测（Redis 记忆后端）会话窗口里长这样：
+ * <h2>调用方与"不入历史"的保证</h2>
+ * 本类由 {@code StreamingRagAssistantConfig} 的 <b>{@code chatRequestTransformer} 直接调用</b>，
+ * 返回值只用于替换"本次即将发出的请求"里那条用户消息。
  * <pre>
- * SYSTEM : 你是一个专业的AI助手...
- * USER   : 维森·安防系列（VisonGuard）主要有哪些功能？      ← 原问题
- *
- *          以下是从知识库中检索到的相关文档内容，请优先...   ← 检索到的文档正文（！）
- * AI     : 根据知识库文档，...
+ * 记忆里存的：[USER] 维森·安防系列主要有哪些功能？        ← 原始问题，干净
+ * 发出去的是：[USER] 维森·安防系列主要有哪些功能？ + 检索到的文档正文 + 指示
  * </pre>
- * 那条 USER 的 JSON 长度约 <b>1045 字符</b>，其中大部分是文档正文；并且
- * <b>后续轮次会把它当历史一起重发</b>——实测第二轮问一个与知识库无关的问题
- * （"1+1等于几？"）时，请求体里依然带着上一轮的检索文档。
+ * <b>已被实测验证</b>（2026-10-09，Redis 记忆后端）。
  * <p>
- * 影响两点：
- * <ol>
- *   <li><b>重复计费</b>：检索到的文档被固化进历史，之后每一轮都要重新发送；</li>
- *   <li><b>挤占窗口</b>：窗口只有 maxMessages（默认 20）条，一条被文档撑到 1KB+，
- *       实际能记住的对话轮数明显变少。</li>
- * </ol>
- * <p>
- * 如果不希望文档进历史，就不要用 {@code .retrievalAugmentor(...)}，
- * 改为在 {@code .chatRequestTransformer((request, memoryId) -> ...)} 里自己检索 + 注入：
- * 那样只改"本次发出去的请求"，记忆里留的仍是原始消息（顺带也能把文档放进 SystemMessage
- * 以获得更高优先级，而不必牺牲用户消息）。
+ * ⚠️ <b>不要改回 {@code .retrievalAugmentor(...)}</b>：那条路会把本方法的返回值
+ * <b>当作那条用户消息写进 ChatMemory</b>——实测后果是检索到的文档被固化进历史、
+ * 之后每轮重复发送（那条消息 JSON 长约 1045 字符），既重复计费又挤占只有 20 条的会话窗口。
  */
 @Component
 public class RagContentInjector implements ContentInjector {
