@@ -1,5 +1,7 @@
 package com.llm.mini.config;
 
+import com.llm.mini.rag.DocumentVisibility;
+import com.llm.mini.rag.RagMetadataKeys;
 import com.llm.mini.service.RagDocumentFingerprintService;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
@@ -114,32 +116,22 @@ public class EmbeddingStoreConfig {
     }
 
     /**
-     * 基于文件指纹的增量同步（指纹存储在 MySQL）：
-     * <pre>
-     *   新文件              → 写入向量 + 插入指纹
-     *   已变更              → 删除旧向量 → 写入新向量 + 更新指纹
-     *   指纹在但向量缺失    → 删除(残留)向量 → 重新写入 + 更新指纹   ← ★ 自愈
-     *   无变化且向量在      → 跳过
-     *   已删除              → 删除向量 + 删除指纹
-     * </pre>
+     * 基于文件指纹的增量同步（内置知识库）。
      *
-     * <h2>为什么需要"向量缺失"这条自愈分支</h2>
-     * 只比对指纹有个致命盲区：<b>指纹说"已摄入"，但向量其实不在</b>。
-     * 典型触发场景是"为了改维度/换模型而删掉并重建集合"——指纹行还留着，
-     * 于是每次启动都判定"无变化 → 跳过"，<b>知识库永远补不回来，而且不报任何错</b>。
-     * 本项目 2026-10-08 就真实踩到过：集合被重建后实体数为 0，RAG 从此静默失效，
-     * 最后只能手工删指纹才恢复。
-     * <p>
-     * 因此这里对"指纹匹配"的文档再做一次<b>存在性探测</b>：拿该文档自身开头做查询向量，
-     * 按 {@code doc_source} 过滤检索一次——只要还能召回任何一条，就说明向量确实在。
-     * 探测不到就视为缺失，删掉残留后重新摄入。
+     * 新文件           → 写向量 + 插指纹
+     * 已变更           → 删旧向量 → 写新向量 + 更新指纹
+     * 指纹在但向量缺失 → 删残留 → 重写 + 更新指纹   ← 自愈
+     * 无变化且向量在   → 跳过
+     * 已删除           → 删向量 + 删指纹
      *
-     * <h2>副作用与安全边界</h2>
-     * <ul>
-     *   <li>探测失败（网络/集合异常）时<b>保守认为"向量在"</b>，宁可漏治也不误删重摄；</li>
-     *   <li>每篇文档独立 try/catch：<b>一篇失败不影响其它篇</b>，且<b>失败就不写指纹</b>，
-     *       这样下次启动会自动重试（指纹只有在摄入成功后才落库）。</li>
-     * </ul>
+     * 自愈分支的必要性：只比对指纹有个致命盲区——指纹说"已摄入"但向量其实不在。
+     * 典型场景是"为了改维度/换模型而删掉重建集合"，指纹行还留着，于是每次启动都判定
+     * "无变化 → 跳过"，知识库永远补不回来且不报错。2026-10-08 真实踩到过。
+     * 这里对指纹匹配的文档再做一次存在性探测：拿文档自身开头做查询向量按 doc_source 检索，
+     * 召回不到就视为缺失，删残留后重新摄入。
+     *
+     * 安全边界：探测失败时保守认为"向量在"（宁可漏治，不可误删重摄）；
+     * 每篇文档独立 try/catch，失败不写指纹，下次启动自动重试。
      */
     private void syncDocuments(EmbeddingStore<TextSegment> store, EmbeddingModel embeddingModel) {
         // 1. 从 DB 加载历史指纹
@@ -202,10 +194,14 @@ public class EmbeddingStoreConfig {
 
                 document.metadata().put(META_DOC_SOURCE, filePath);
                 // 多租户 RAG 隔离标签：摄入时打上归属 userId / agentId，
-                // 检索时 RagContentRetriever 按 userId/agentId 拼 AND 过滤，
+                // 检索时 RagContentRetriever 按 userId + (agentId 或 visibility=USER) 过滤，
                 // 从而保证"对应 agent 只检索到自己的知识库"（后续可按文档上传来源覆盖这两个值）
-                document.metadata().put("userId", String.valueOf(defaultUserId));
-                document.metadata().put("agentId", String.valueOf(defaultAgentId));
+                document.metadata().put(RagMetadataKeys.USER_ID, String.valueOf(defaultUserId));
+                document.metadata().put(RagMetadataKeys.AGENT_ID, String.valueOf(defaultAgentId));
+                // visibility=AGENT：内置知识库只对 default-agent-id 那个智能体可见。
+                // 与"用户上传"（RagDocumentService）保持同一套元数据 schema，
+                // 检索侧的过滤表达式才能对两者统一生效。
+                document.metadata().put(RagMetadataKeys.VISIBILITY, DocumentVisibility.AGENT.name());
                 EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                         .embeddingStore(store)
                         .embeddingModel(embeddingModel)
@@ -233,14 +229,10 @@ public class EmbeddingStoreConfig {
     }
 
     /**
-     * 存在性探测：该 {@code doc_source} 在 Milvus 里是否还有向量。
-     * <p>
-     * 取文档开头一小段作为查询向量，按 {@code doc_source} 过滤、只取 1 条。
-     * 用文档自己的内容去查它自己的片段，只要向量在，相似度必然是正数——所以
-     * {@code minScore} 留 0 即可（这里只问"在不在"，不是问"像不像"）。
-     * <p>
-     * 任何异常都返回 {@code true}（保守认为存在）：宁可漏治，也不要因为一次探测抖动
-     * 就把正常数据删掉重摄。
+     * 存在性探测：该 doc_source 在 Milvus 里是否还有向量。
+     * 取文档开头一小段做查询向量，按 doc_source 过滤只取 1 条——用文档自己的内容查它自己的片段，
+     * 只要向量在相似度必然为正，所以 minScore 留 0（只问"在不在"，不问"像不像"）。
+     * 任何异常都返回 true（保守认为存在），宁可漏治也不要因一次探测抖动就删掉正常数据重摄。
      */
     private boolean hasVectors(EmbeddingStore<TextSegment> store,
                                EmbeddingModel embeddingModel,

@@ -15,60 +15,30 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * RAG 内容注入器：把检索到的文档片段并入<b>用户消息</b>，供 LLM 参考。
+ * RAG 内容注入器：把检索到的文档片段并入用户消息，供 LLM 参考。
  *
- * <h2>⚠️ 契约要点（改这里之前务必先读）</h2>
- * {@link ContentInjector} 的语义是"把 contents 注入<b>到给定的 UserMessage 里</b>"：
- * <pre>
- * ChatMessage inject(List&lt;Content&gt; contents, ChatMessage chatMessage);
- * </pre>
- * 官方 javadoc 明确写着 <i>"Injects given Contents into a given UserMessage …
- * the ChatMessage <b>into which</b> the Contents are to be injected.
- * Currently, only UserMessage is supported."</i>
- * <p>
- * 也就是说：<b>这个返回值会替换掉请求里的那条用户消息</b>（见
- * {@code DefaultRetrievalAugmentor.augment()} —— 它把 inject 的返回值直接作为
- * {@code AugmentationResult.chatMessage()}）。因此：
- * <ul>
- *   <li><b>必须把原始用户消息带上</b>（模板里的 {@code {{userMessage}}}），
- *       否则用户的问题会被整条丢掉，模型只能对着文档空谈、答非所问；</li>
- *   <li><b>必须返回 UserMessage</b>。曾经这里返回的是
- *       {@code SystemMessage.from(prompt.text())}，且模板只有 {@code {{contents}}}——
- *       结果是"检索一旦命中，用户消息就被一条只含文档的 SystemMessage 顶替"，
- *       问题丢失。这与官方默认实现 {@code DefaultContentInjector} 的行为不一致
- *       （它的模板是 {@code {{userMessage}}\n\nAnswer using the following information:\n{{contents}}}，
- *       返回值是 {@code userMessage.toBuilder().contents(...)}，仍是 UserMessage）。</li>
- * </ul>
- * 如果想要"文档优先级更高"的效果，正确做法是<b>在模板文字里把要求写强</b>，
- * 或者另用 {@code chatRequestTransformer} 追加一条 SystemMessage，
- * <b>而不是</b>在这里把用户消息换掉。
+ * 契约要点（改之前先读）：ContentInjector 的语义是"把 contents 注入到给定的 UserMessage 里"，
+ * 返回值会替换掉请求里那条用户消息。所以：
+ * - 模板必须带 {{userMessage}}，否则用户的问题会被整条丢掉，模型只能对着文档空谈；
+ * - 必须返回 UserMessage。曾经这里返回 SystemMessage.from(...) 且模板只有 {{contents}}，
+ *   结果检索一命中就把用户消息顶替掉了。官方 DefaultContentInjector 的模板是
+ *   "{{userMessage}}\n\nAnswer using the following information:\n{{contents}}"，返回值仍是 UserMessage。
+ * 想要"文档优先级更高"，应该在模板文字里把要求写强，而不是在这里换掉用户消息。
  *
- * <h2>注入时机</h2>
- * 在 ChatModel 被调用之前，由 LangChain4j 的 RAG 框架自动触发（需要检索命中，
- * 即相似度 ≥ {@code minScore}，见 {@code RagContentRetriever}）。
+ * 调用方：StreamingRagAssistantConfig 的 chatRequestTransformer。
+ * 返回值只影响本次请求，不写进会话历史（实测 2026-10-09）：
+ *   记忆里存的是"维森·安防系列主要有哪些功能？"，发出去的是它 + 文档正文 + 指示。
  *
- * <h2>调用方与"不入历史"的保证</h2>
- * 本类由 {@code StreamingRagAssistantConfig} 的 <b>{@code chatRequestTransformer} 直接调用</b>，
- * 返回值只用于替换"本次即将发出的请求"里那条用户消息。
- * <pre>
- * 记忆里存的：[USER] 维森·安防系列主要有哪些功能？        ← 原始问题，干净
- * 发出去的是：[USER] 维森·安防系列主要有哪些功能？ + 检索到的文档正文 + 指示
- * </pre>
- * <b>已被实测验证</b>（2026-10-09，Redis 记忆后端）。
- * <p>
- * ⚠️ <b>不要改回 {@code .retrievalAugmentor(...)}</b>：那条路会把本方法的返回值
- * <b>当作那条用户消息写进 ChatMemory</b>——实测后果是检索到的文档被固化进历史、
- * 之后每轮重复发送（那条消息 JSON 长约 1045 字符），既重复计费又挤占只有 20 条的会话窗口。
+ * 不要改回 .retrievalAugmentor(...)：那条路会把返回值当作那条用户消息写进 ChatMemory，
+ * 文档被固化进历史并每轮重发（实测那条消息约 1045 字符），既重复计费又挤占 20 条的窗口。
  */
 @Component
 public class RagContentInjector implements ContentInjector {
 
     /**
      * 注入模板。
-     * <p>
-     * {@code {{userMessage}}} —— <b>必需</b>，用户原始问题；
-     * {@code {{contents}}} —— 检索到的文档片段（多段用 --- 分隔）。
-     * 二者缺一不可：只留 contents 就等于把问题删了。
+     * {{userMessage}} 必需，是用户原始问题；{{contents}} 是检索到的文档片段（多段用 --- 分隔）。
+     * 两者缺一不可：只留 contents 就等于把问题删了。
      */
     private static final PromptTemplate PROMPT_TEMPLATE = PromptTemplate.from("""
             {{userMessage}}
@@ -85,9 +55,8 @@ public class RagContentInjector implements ContentInjector {
 
     /**
      * 执行注入。
-     * <p>
-     * 检索结果为空 → 原样返回（走正常对话，不做 RAG 增强）。
-     * 非 UserMessage → 原样返回（契约目前只支持 UserMessage，别把内容弄丢）。
+     * 检索结果为空 → 原样返回（走正常对话，不做 RAG）。
+     * 非 UserMessage → 原样返回（契约只支持 UserMessage，别把内容弄丢）。
      */
     @Override
     public ChatMessage inject(List<Content> contents, ChatMessage chatMessage) {

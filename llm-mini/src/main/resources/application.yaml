@@ -10,6 +10,19 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ============================================================
+  # 文件上传大小限制（客户上传文档用）
+  #   ⚠️ Boot 默认是 max-file-size=1MB / max-request-size=10MB，两个都必须放开；
+  #      只设前者的话，20MB 的文件仍会被 10MB 的 request 上限挡住。
+  #   max-file-size 用占位符引用 llm.rag.upload.max-file-size，保持单一来源——
+  #      避免"改了一处忘了另一处"，那会让容器先拒掉文件、应用层的友好提示根本执行不到。
+  #   max-request-size 需大于 file 上限（multipart 还要带 boundary 和表单字段）。
+  # ============================================================
+  servlet:
+    multipart:
+      max-file-size: ${llm.rag.upload.max-file-size}
+      max-request-size: 25MB
+
+  # ============================================================
   # Redis 连接（会话记忆存储）
   #   默认共享单连接 + 命令流水线，对当前量级足够。
   #   如需连接池请额外引入 org.apache.commons:commons-pool2，
@@ -88,12 +101,44 @@ llm:
       ttl: 7d                     # 滑动过期：每次写入刷新；0 = 永不过期
   # ============================================================
   # 动态智能体 / 多租户 RAG 默认归属
-  #   摄入文档时给向量打 userId / agentId 标签，检索时按 @V("userId")/@V("agentId") 过滤
+  #   摄入文档时给向量打 userId / agentId 标签，检索时按 @Value("userId")/@V("agentId") 过滤
   #   （与 MessageRequestVO 的默认 userId=123、agentId=1 保持一致，保证默认对话 RAG 可用）
   # ============================================================
   rag:
     default-user-id: 123
     default-agent-id: 1
+
+    # ==========================================================
+    # 客户上传文档（多租户 RAG 知识库）
+    #   代码：RagUploadProperties / RagDocumentService / AliyunOssDocumentStorage
+    #   接口：/api/rag/document/{upload,list,get,delete,retry}
+    #
+    #   存储约定：客户上传的原始文档只存阿里云 OSS，不落应用本地磁盘。
+    #             官方文档走另一条路——放进 llm-mini/src/main/resources/documentation，
+    #             由启动自检（EmbeddingStoreConfig）增量同步进 Milvus + MySQL 指纹表。
+    #
+    #   ★ 本段除 OSS 凭据外都有代码默认值，不配也能启动。
+    #
+    #   ⚠️ 关于 ${ENV:兜底} 的两条规矩：
+    #      ① 非密钥、且确实有合理兜底的（地域节点、key 前缀）→ 写 ${ENV:兜底值}，
+    #         没设环境变量就用兜底值，兜底值本身没有保密问题、还能当文档。
+    #      ② 密钥或必须由你提供的（access-key-id / secret / bucket）→ 用 ${ENV:} 空兜底。
+    #         绝不能写 ${ENV:真实值} —— 那等于把密钥明文留在 yml 里、随 Git 提交出去。
+    #         空兜底的效果：没配时是空串 → 启动时明确报"未配置 xxx"，且不影响聊天与内置知识库。
+    #   ⚠️ bucket 必须保持私有读，不要设成公共读。
+    # ==========================================================
+    upload:
+      max-file-size: 20MB                 # 单文件上限（会同步到 multipart 限制）
+      max-documents-per-user: 200         # 单用户文档数配额
+      chunk-size: 300                     # 分片长度（字符）
+      chunk-overlap: 30                   # 相邻分片重叠（字符）
+      allowed-extensions: pdf,docx,doc,txt,md,markdown,html,htm,xlsx,xls,pptx,ppt,csv
+      oss:
+        endpoint: ${OSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}   # 地域节点，非密钥可给兜底
+        key-prefix: ${OSS_KEY_PREFIX:rag-docs}                   # 对象 key 前缀，非密钥
+        access-key-id: ${OSS_ACCESS_KEY_ID:}                     # 空兜底：不落明文
+        access-key-secret: ${OSS_ACCESS_KEY_SECRET:}             # 空兜底：不落明文
+        bucket-name: ${OSS_BUCKET:}                              # 空兜底：不落明文
 
 logging:
   level:

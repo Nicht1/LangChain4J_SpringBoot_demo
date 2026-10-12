@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>llm-mini 测试台</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --panel:#fff; --line:#e3e3df; --line2:#d0d0ca;
+    --text:#2c2c2a; --muted:#6b6b66; --hint:#9a9a94;
+    --blue:#185fa5; --blue-bg:#e6f1fb; --blue-line:#b5d4f4;
+    --teal:#0f6e56; --teal-bg:#e1f5ee; --teal-line:#9fe1cb;
+    --amber:#854f0b; --amber-bg:#faeeda; --red:#a32d2d; --red-bg:#fcebeb;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--text)}
+  h1{font-size:16px;font-weight:500;margin:0}
+  h2{font-size:14px;font-weight:500;margin:0 0 10px}
+  .layout{display:flex;height:100vh;overflow:hidden}
+
+  /* ---------- 左栏：配置 + 智能体 ---------- */
+  .side{width:340px;flex:0 0 340px;border-right:1px solid var(--line);background:var(--panel);
+        overflow-y:auto;padding:16px}
+  .brand{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .badge{font-size:12px;padding:2px 8px;border-radius:20px;background:var(--line);color:var(--muted)}
+  .badge.up{background:var(--teal-bg);color:var(--teal)}
+  .badge.down{background:var(--red-bg);color:var(--red)}
+
+  fieldset{border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin:0 0 14px}
+  legend{font-size:12px;color:var(--muted);padding:0 6px}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+  input,textarea,select{width:100%;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;
+        font:inherit;font-size:13px;background:#fff;color:var(--text)}
+  textarea{resize:vertical;min-height:76px;font-size:12.5px;line-height:1.55}
+  input:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-bg)}
+  .hint{font-size:11.5px;color:var(--hint);margin-top:4px}
+
+  .row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  button{padding:7px 12px;border:1px solid var(--line2);border-radius:7px;background:#fff;
+          font:inherit;font-size:13px;cursor:pointer;color:var(--text)}
+  button:hover{background:#f3f3f1}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  button.primary:hover{background:#134d87}
+  button.danger{color:var(--red);border-color:#f0c0c0}
+  button.danger:hover{background:var(--red-bg)}
+
+  .agent-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+  .agent{padding:9px 11px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:#fff}
+  .agent:hover{border-color:var(--line2)}
+  .agent.active{border-color:var(--blue);background:var(--blue-bg)}
+  .agent .n{font-weight:500}
+  .agent .m{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ---------- 右栏：聊天 ---------- */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);
+          background:var(--panel);flex-wrap:wrap}
+  .topbar .sid{font-size:11.5px;color:var(--hint);font-family:ui-monospace,Consolas,monospace}
+  .spacer{flex:1}
+
+  .chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:min(760px,86%);padding:10px 13px;border-radius:var(--radius);white-space:pre-wrap;
+       word-break:break-word}
+  .msg.user{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:3px}
+  .msg.ai{align-self:flex-start;background:var(--panel);border:1px solid var(--line);
+          border-bottom-left-radius:3px}
+  .msg.sys{align-self:center;background:var(--amber-bg);color:var(--amber);font-size:12.5px;
+           border:1px solid #fac775}
+  .msg.err{align-self:flex-start;background:var(--red-bg);color:var(--red);border:1px solid #f7c1c1;
+           font-size:12.5px}
+  .msg .who{font-size:11px;color:var(--hint);margin-bottom:4px}
+  .msg.user .who{color:#cfe3f7}
+  .tool{align-self:flex-start;background:var(--teal-bg);border:1px solid var(--teal-line);
+        color:var(--teal);font-size:12px;padding:6px 10px;border-radius:8px;max-width:86%;
+        font-family:ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .typing::after{content:"▍";animation:blink 1s steps(2) infinite;color:var(--blue)}
+  @keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+  .empty{color:var(--hint);text-align:center;margin:auto;font-size:13px;line-height:2}
+
+  .composer{border-top:1px solid var(--line);background:var(--panel);padding:12px 16px}
+  .composer .inner{display:flex;gap:10px;align-items:flex-end}
+  .composer textarea{min-height:46px;max-height:150px;font-size:13.5px}
+
+  /* ---------- 调试抽屉 ---------- */
+  .debug{border-top:1px solid var(--line);background:#fbfbfa;max-height:210px;overflow-y:auto;
+         padding:8px 16px;font:11.5px/1.7 ui-monospace,Consolas,monospace;color:var(--muted);
+         display:none}
+  .debug.show{display:block}
+  .debug .ev{color:var(--blue)}
+  .debug .raw{color:var(--hint);word-break:break-all}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="side">
+    <div class="brand">
+      <h1>llm-mini 测试台</h1>
+      <span class="badge" id="health">检查中…</span>
+    </div>
+    <div id="healthDetail" class="hint" style="display:none;color:var(--red);white-space:pre-wrap;margin-bottom:12px"></div>
+
+    <fieldset>
+      <legend>后端地址</legend>
+      <input id="apiBase" placeholder="留空 = 与当前页面同源">
+      <div class="hint" id="apiHint"></div>
+      <div class="row">
+        <button id="btnReconnect">重新连接</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>用户身份</legend>
+      <label>userId（多租户隔离维度）</label>
+      <input id="userId" type="number" value="123">
+      <div class="hint">记忆键 = userId : agentId : sessionId，换 userId 即换一套历史与智能体。</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>智能体（决定人设 / RAG 过滤）</legend>
+      <div class="agent-list" id="agents"></div>
+      <div class="row">
+        <button id="btnRefresh">刷新</button>
+        <button id="btnNew">新建</button>
+        <button id="btnEdit" disabled>编辑</button>
+        <button id="btnDel" class="danger" disabled>删除</button>
+      </div>
+      <div class="hint" id="agentHint">未选中</div>
+    </fieldset>
+
+    <fieldset id="editor" style="display:none">
+      <legend id="editorTitle">新建智能体</legend>
+      <label>名称</label>
+      <input id="fName" placeholder="例如：刻薄的面试官">
+      <label>系统提示词（人设）</label>
+      <textarea id="fPrompt" placeholder="你是一位严厉的技术面试官，回答必须简短、直接指出问题…"></textarea>
+      <label>描述（可选）</label>
+      <input id="fDesc" placeholder="用于列表展示">
+      <div class="row">
+        <button class="primary" id="btnSave">保存</button>
+        <button id="btnCancel">取消</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>会话</legend>
+      <label>sessionId</label>
+      <input id="sessionId" placeholder="留空则新建会话">
+      <div class="row">
+        <button id="btnNewSession">新会话</button>
+        <button id="btnClear" class="danger">清空记忆</button>
+        <button id="btnDebug">调试日志</button>
+      </div>
+      <div class="hint">清空记忆会删掉该会话在 Redis 里的窗口（key = userId:agentId:sessionId）。</div>
+    </fieldset>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <strong id="curAgent">未选择智能体</strong>
+      <span class="sid" id="curSession">—</span>
+      <span class="spacer"></span>
+      <button id="btnClearChat">清空聊天区</button>
+      <button id="btnStop" disabled>停止输出</button>
+    </div>
+
+    <div class="chat" id="chat">
+      <div class="empty">左侧选一个智能体 →<br>下方输入问题开始对话</div>
+    </div>
+
+    <div class="composer">
+      <div class="inner">
+        <textarea id="input" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
+        <button class="primary" id="btnSend" style="height:46px;padding:0 20px">发送</button>
+      </div>
+    </div>
+
+    <div class="debug" id="debug"></div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   配置
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   后端地址解析
+   同源（页面由后端自己托管）时用相对路径，CORS 根本不参与，最省事；
+   若页面是从文件系统/别的服务器打开的，则必须显式指定后端地址，
+   否则相对路径会解析到 file:// 或那个服务器上，全部请求失败——
+   表现就是"服务离线 / 点了没反应"。
+   ============================================================ */
+const DEFAULT_BASE = location.protocol.startsWith('http') ? '' : 'http://localhost:8081';
+const BASE_KEY = 'llm-mini:apiBase';
+
+function base() {
+  const el = $('apiBase');
+  const raw = (el && el.value != null) ? el.value.trim() : '';
+  return raw.replace(/\/+$/, '');   // 去掉结尾斜杠
+}
+
+const API = {
+  agentList:   userId       => `${base()}/api/agent/list?userId=${encodeURIComponent(userId)}`,
+  agentGet:    (id, userId) => `${base()}/api/agent/get?id=${id}&userId=${userId}`,
+  agentCreate: ()           => `${base()}/api/agent/create`,
+  agentUpdate: ()           => `${base()}/api/agent/update`,
+  agentDelete: (id, userId) => `${base()}/api/agent/delete?id=${id}&userId=${userId}`,
+  streamSend:  ()           => `${base()}/api/stream/chat/send`,
+  streamStop:  ()           => `${base()}/api/stream/chat/stop`,
+  streamClear: ()           => `${base()}/api/stream/chat/clear`,
+  health:      ()           => `${base()}/api/stream/chat/health`
+};
+
+function initApiBase() {
+  const saved = localStorage.getItem(BASE_KEY);
+  $('apiBase').value = saved != null ? saved : DEFAULT_BASE;
+  updateApiHint();
+}
+
+function updateApiHint() {
+  const b = base();
+  $('apiHint').textContent = b
+    ? `当前：${b} —— 跨域访问，需后端已放开 CORS 且部署在 ${b}`
+    : `当前：与页面同源（${location.origin || 'file://'}）—— 推荐`;
+}
+
+const state = { agents: [], current: null, sessionId: null, abort: null, streaming: false };
+
+/* ============================================================
+   通用请求
+   原则：任何失败都必须抛出具描述性的错误，绝不允许静默——
+   "点了没反应"通常是 fetch 被拒（跨域/服务停）却没人 catch 造成的。
+   ============================================================ */
+async function apiJSON(url, options) {
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch (e) {
+    throw new Error(
+      `请求发不出去：${url}\n原因：${e.message}\n` +
+      `常见情况：① 页面不是从应用自身打开的（http://<后端>:8081/），` +
+      `跨域会被浏览器拦截；② 后端已停止。`
+    );
+  }
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`后端返回 HTTP ${res.status}：${url}\n${text.slice(0, 300)}`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`后端响应不是合法 JSON：${url}\n${text.slice(0, 300)}`);
+  }
+}
+
+function postJSON(url, body) {
+  return apiJSON(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+}
+
+function showError(where, e) {
+  const msg = (e && e.message) || String(e);
+  console.error('[llm-mini]', where, e);
+  alert(`【${where}】失败：\n\n${msg}`);
+}
+
+/**
+ * 往调试面板追加一条原始事件。
+ * 用 DOM API 逐个赋值（而不是拼 innerHTML），既避免 HTML 注入，
+ * 也就彻底不需要 esc() 这类转义函数——之前正是因为引用了未定义的 esc()，
+ * 让每次发送都在这里抛 ReferenceError，导致回答一个字都渲染不出来。
+ * 另外整体包 try/catch：调试日志自身出问题，绝不能影响消息渲染这条主链路。
+ */
+function log(event, data) {
+  try {
+    const box = $('debug');
+    const div = document.createElement('div');
+    const ev = document.createElement('span');
+    ev.className = 'ev';
+    ev.textContent = 'event: ' + event;
+    const raw = document.createElement('span');
+    raw.className = 'raw';
+    raw.textContent = typeof data === 'string' ? data : JSON.stringify(data);
+    div.append(ev, raw);
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  } catch (e) {
+    console.warn('[llm-mini] 写入调试面板失败（不影响消息渲染）', e);
+  }
+}
+
+/* ============================================================
+   健康检查
+   ============================================================ */
+async function checkHealth() {
+  const el = $('health');
+  const detail = $('healthDetail');
+  const url = API.health();
+  try {
+    const j = await apiJSON(url);
+    el.textContent = j.status === 'UP' ? '服务在线' : '状态未知';
+    el.className = 'badge ' + (j.status === 'UP' ? 'up' : 'down');
+    detail.style.display = 'none';
+    detail.textContent = '';
+  } catch (e) {
+    el.textContent = '服务离线';
+    el.className = 'badge down';
+    const sameOrigin = !base();
+    detail.style.display = 'block';
+    detail.textContent =
+      '连不上后端。\n' +
+      '请求地址：' + url + '\n' +
+      '失败原因：' + ((e && e.message) || e) + '\n' +
+      (sameOrigin
+        ? '排查：① 后端是否真的在跑（本页由后端托管，能打开说明端口对，那多半是后端已停）；② 页面若是用 file:// 或别的服务器打开的，"同源"就是错的，请在左上「后端地址」里填 http://<后端IP>:<端口>。'
+        : '排查：① 「后端地址」是否填对（含协议与端口）；② 后端是否放开 CORS（浏览器控制台 Network 里看这个请求是否被 CORS 拦）；③ 从别的机器访问时后端是否监听 0.0.0.0。');
+    console.warn('[llm-mini] 健康检查失败', url, e);
+  }
+}
+
+/* ============================================================
+   智能体 CRUD
+   ============================================================ */
+async function loadAgents(keepSelection) {
+  const userId = $('userId').value.trim();
+  try {
+    const json = await apiJSON(API.agentList(userId));
+    state.agents = json.data || [];
+  } catch (e) {
+    state.agents = [];
+    state.current = null;
+    renderAgents();
+    $('agents').innerHTML = '';
+    const d = document.createElement('div');
+    d.className = 'hint';
+    d.style.color = 'var(--red)';
+    d.textContent = '智能体列表加载失败：' + ((e && e.message) || e);
+    $('agents').appendChild(d);
+    await onAgentChanged();
+    return;
+  }
+  if (!keepSelection || !state.agents.some(a => a.id === state.current)) {
+    state.current = state.agents.length ? state.agents[0].id : null;
+  }
+  renderAgents();
+  await onAgentChanged();
+}
+
+function renderAgents() {
+  const box = $('agents');
+  box.innerHTML = '';
+  if (!state.agents.length) {
+    box.innerHTML = '<div class="hint">该 userId 下还没有智能体，点「新建」创建。</div>';
+  }
+  for (const a of state.agents) {
+    const d = document.createElement('div');
+    d.className = 'agent' + (a.id === state.current ? ' active' : '');
+    const n = document.createElement('div'); n.className = 'n'; n.textContent = `#${a.id} ${a.agentName || '(未命名)'}`;
+    const m = document.createElement('div'); m.className = 'm';
+    m.textContent = (a.systemMessage || a.description || '').replace(/\s+/g, ' ').slice(0, 60) || '(无人设)';
+    d.append(n, m);
+    d.onclick = () => { state.current = a.id; renderAgents(); onAgentChanged(); };
+    box.appendChild(d);
+  }
+  const has = state.current != null;
+  $('btnEdit').disabled = !has;
+  $('btnDel').disabled = !has;
+  const cur = state.agents.find(a => a.id === state.current);
+  $('agentHint').textContent = cur ? `已选 #${cur.id} ${cur.agentName}` : '未选中';
+  $('curAgent').textContent = cur ? `#${cur.id} ${cur.agentName}` : '未选择智能体';
+}
+
+/** 切换智能体后：换 sessionId（记忆按 用户×智能体×会话 隔离，不能复用） */
+async function onAgentChanged() {
+  $('sessionId').value = '';
+  state.sessionId = null;
+  $('curSession').textContent = '—';
+  if (state.current != null) {
+    const saved = localStorage.getItem(sessionKey());
+    if (saved) { state.sessionId = saved; $('sessionId').value = saved; $('curSession').textContent = saved; }
+  }
+}
+
+const sessionKey = () => `llm-mini:session:${$('userId').value.trim()}:${state.current}`;
+
+function openEditor(agent) {
+  $('editor').style.display = 'block';
+  $('editorTitle').textContent = agent ? `编辑 #${agent.id}` : '新建智能体';
+  $('fName').value = agent ? (agent.agentName || '') : '';
+  $('fPrompt').value = agent ? (agent.systemMessage || '') : '';
+  $('fDesc').value = agent ? (agent.description || '') : '';
+  $('fName').dataset.id = agent ? agent.id : '';
+  $('fName').focus();
+}
+
+async function saveAgent() {
+  const userId = Number($('userId').value.trim());
+  const id = $('fName').dataset.id;
+  const name = $('fName').value.trim();
+  if (!name) { alert('请填写名称'); return; }
+  if (!userId) { alert('userId 不合法，请检查左上角'); return; }
+
+  const body = {
+    ownerId: userId,
+    agentName: name,
+    systemMessage: $('fPrompt').value,
+    description: $('fDesc').value
+  };
+
+  $('btnSave').disabled = true;
+  try {
+    let res;
+    if (id) { body.id = Number(id); res = await postJSON(API.agentUpdate(), body); }
+    else    { res = await postJSON(API.agentCreate(), body); }
+
+    if (!res.success) { alert(res.message || '保存失败'); return; }
+    if (res.data && res.data.id) state.current = res.data.id;
+    $('editor').style.display = 'none';
+    await loadAgents(true);
+  } catch (e) {
+    showError(id ? '更新智能体' : '创建智能体', e);
+  } finally {
+    $('btnSave').disabled = false;
+  }
+}
+
+async function deleteAgent() {
+  const cur = state.agents.find(a => a.id === state.current);
+  if (!cur) { alert('请先在左侧选中一个智能体'); return; }
+  if (!confirm(`确认删除智能体「${cur.agentName}」？`)) return;
+  try {
+    const res = await postJSON(API.agentDelete(cur.id, $('userId').value.trim()));
+    if (!res.success) { alert(res.message || '删除失败'); return; }
+    state.current = null;
+    await loadAgents(false);
+  } catch (e) {
+    showError('删除智能体', e);
+  }
+}
+
+/* ============================================================
+   聊天：SSE（POST + ReadableStream 手动解析）
+   注意 EventSource 只支持 GET 且不能带 body，所以必须用 fetch 手解 SSE 帧
+   ============================================================ */
+function addMessage(cls, text, who) {
+  const empty = $('chat').querySelector('.empty');
+  if (empty) empty.remove();
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  // 时间戳：用来判断气泡是不是"这一次"的（老的红气泡会一直留在聊天区里）
+  const stamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  const w = document.createElement('div');
+  w.className = 'who';
+  w.textContent = (who ? who + ' · ' : '') + stamp;
+  d.appendChild(w);
+  const body = document.createElement('span');
+  body.textContent = text || '';
+  d.appendChild(body);
+  $('chat').appendChild(d);
+  $('chat').scrollTop = $('chat').scrollHeight;
+  return d;
+}
+
+/** 错误气泡：带上当前后端地址与会话，便于判断是哪一次、连的是哪 */
+function addError(where, detail) {
+  const box = addMessage('err',
+    `【${where}】\n${detail}\n\n后端地址：${base() || '(与页面同源) ' + location.origin}\n` +
+    `会话：${$('sessionId').value.trim() || '(尚未建立)'}\n` +
+    `时间：${new Date().toLocaleString('zh-CN', { hour12: false })}`);
+  $('debug').classList.add('show');   // 出错自动打开调试日志
+  return box;
+}
+
+function addTool(text) {
+  const d = document.createElement('div');
+  d.className = 'tool';
+  d.textContent = text;
+  $('chat').appendChild(d);
+  $('chat').scrollTop = $('chat').scrollHeight;
+}
+
+async function send() {
+  if (state.streaming) return;
+  const text = $('input').value.trim();
+  if (!text) return;
+  if (state.current == null) { alert('请先选择一个智能体'); return; }
+
+  const userId = Number($('userId').value.trim());
+  const agentId = state.current;
+  const sessionId = $('sessionId').value.trim() || state.sessionId;
+
+  addMessage('user', text, `user ${userId}`);
+  $('input').value = '';
+
+  const aiBox = addMessage('ai', '', `agent #${agentId}`);
+  aiBox.classList.add('typing');
+  const aiSpan = aiBox.lastElementChild;
+
+  setStreaming(true);
+  state.abort = new AbortController();
+
+  try {
+    const res = await fetch(API.streamSend(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+      body: JSON.stringify({ userId, agentId, sessionId, message: text }),
+      signal: state.abort.signal
+    });
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let full = '';
+    let done = false;
+
+    while (true) {
+      const { value, done: eof } = await reader.read();
+      if (eof) break;
+      buffer += decoder.decode(value, { stream: true });
+      const drained = drainFrames(buffer);
+      buffer = drained.rest;
+      for (const frame of drained.frames) {
+        if (!frame.trim()) continue;
+        const { event, data } = parseFrame(frame);
+        const payload = tryJSON(data);
+        log(event, data);
+
+        if (event === 'message') {
+          const tok = payload && payload.token != null ? payload.token : '';
+          if (payload && payload.sessionId) rememberSession(payload.sessionId);
+          if (tok) { full += tok; aiSpan.textContent = full; $('chat').scrollTop = $('chat').scrollHeight; }
+        } else if (event === 'tool') {
+          addTool(typeof payload === 'string' ? payload : JSON.stringify(payload));
+        } else if (event === 'complete') {
+          if (payload && payload.fullResponse) { full = payload.fullResponse; aiSpan.textContent = full; }
+          if (payload && payload.sessionId) rememberSession(payload.sessionId);
+          done = true;
+        } else if (event === 'error') {
+          addError('模型返回错误事件', typeof payload === 'string' ? payload : JSON.stringify(payload));
+        }
+      }
+    }
+    if (!full) aiSpan.textContent = done ? '（模型返回空内容）' : '（连接已断开，未收到内容）';
+  } catch (e) {
+    if (e.name === 'AbortError') addMessage('sys', '已停止输出（注意：后端仍在生成，只是前端断开）');
+    else addError('发送消息失败', (e && e.message) || String(e));
+  } finally {
+    aiBox.classList.remove('typing');
+    setStreaming(false);
+    state.abort = null;
+  }
+}
+
+/**
+ * SSE 分帧：从缓冲区里切出「已经完整」的帧，返回剩余不完整部分。
+ * 单独抽成纯函数是为了可测——帧被 TCP 切成两半是最容易埋雷的地方。
+ * 帧以空行分隔，兼容 \n\n 与 \r\n\r\n。
+ */
+function drainFrames(buffer) {
+  const SEP = /\r?\n\r?\n/;          // 非全局，exec 每次从 0 开始找第一个
+  const frames = [];
+  let m;
+  while ((m = SEP.exec(buffer)) !== null) {
+    frames.push(buffer.slice(0, m.index));
+    buffer = buffer.slice(m.index + m[0].length);
+  }
+  return { frames, rest: buffer };
+}
+
+function parseFrame(frame) {
+  let event = 'message', dataLines = [];
+  for (const line of frame.split(/\r?\n/)) {
+    if (line.startsWith('event:')) event = line.slice(6).trim();
+    else if (line.startsWith('data:')) dataLines.push(line.slice(5).replace(/^ /, ''));
+  }
+  return { event, data: dataLines.join('\n') };
+}
+
+function tryJSON(s) { try { return JSON.parse(s); } catch { return s; } }
+
+function rememberSession(sid) {
+  state.sessionId = sid;
+  $('sessionId').value = sid;
+  $('curSession').textContent = sid;
+  localStorage.setItem(sessionKey(), sid);
+}
+
+function setStreaming(on) {
+  state.streaming = on;
+  $('btnSend').disabled = on;
+  $('btnStop').disabled = !on;
+}
+
+async function stop() {
+  if (state.abort) state.abort.abort();
+  try {
+    const res = await postJSON(API.streamStop(), {
+      sessionId: $('sessionId').value.trim(), userId: Number($('userId').value.trim()), agentId: state.current
+    });
+    addMessage('sys', res.message || '已请求停止');
+  } catch (e) {
+    showError('停止输出', e);
+  }
+}
+
+async function clearMemory() {
+  if (!$('sessionId').value.trim() && !state.sessionId) { addMessage('sys', '当前还没有会话，无需清空'); return; }
+  if (!confirm('确认清空该会话的记忆？')) return;
+  try {
+    const res = await postJSON(API.streamClear(), {
+      sessionId: $('sessionId').value.trim() || state.sessionId,
+      userId: Number($('userId').value.trim()),
+      agentId: state.current
+    });
+    addMessage('sys', res.message || '已清空');
+    localStorage.removeItem(sessionKey());
+    state.sessionId = null;
+    $('sessionId').value = '';
+    $('curSession').textContent = '—';
+  } catch (e) {
+    showError('清空记忆', e);
+  }
+}
+
+/* ============================================================
+   事件绑定
+   ============================================================ */
+$('btnRefresh').onclick = () => loadAgents(true);
+$('btnNew').onclick = () => openEditor(null);
+$('btnEdit').onclick = () => openEditor(state.agents.find(a => a.id === state.current));
+$('btnDel').onclick = deleteAgent;
+$('btnSave').onclick = saveAgent;
+$('btnCancel').onclick = () => { $('editor').style.display = 'none'; };
+$('btnSend').onclick = send;
+$('btnStop').onclick = stop;
+$('btnClear').onclick = clearMemory;
+$('btnDebug').onclick = () => $('debug').classList.toggle('show');
+$('btnClearChat').onclick = () => {
+  // 老的红气泡不会自动消失，容易让人误以为"又失败了"，所以给一个显式清空入口
+  const box = $('chat');
+  box.innerHTML = '';
+  const d = document.createElement('div');
+  d.className = 'empty';
+  d.innerHTML = '聊天区已清空<br>下方输入问题继续';
+  box.appendChild(d);
+  $('debug').innerHTML = '';
+};
+$('btnNewSession').onclick = () => {
+  localStorage.removeItem(sessionKey());
+  state.sessionId = null;
+  $('sessionId').value = '';
+  $('curSession').textContent = '—';
+  addMessage('sys', '已开启新会话（记忆为空）');
+};
+$('userId').onchange = () => loadAgents(false);
+$('apiBase').onchange = $('apiBase').oninput = () => {
+  localStorage.setItem(BASE_KEY, $('apiBase').value.trim());
+  updateApiHint();
+};
+$('btnReconnect').onclick = async () => {
+  localStorage.setItem(BASE_KEY, $('apiBase').value.trim());
+  updateApiHint();
+  await checkHealth();
+  await loadAgents(false);
+};
+$('input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+$('input').addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+});
+
+/* 启动 */
+initApiBase();
+checkHealth();
+loadAgents(false);
+setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>
